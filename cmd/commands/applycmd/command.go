@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
@@ -41,7 +43,8 @@ func NewRunner(ctx context.Context, version string) *Runner {
 	r.Command = cmd
 
 	r.Command.Flags().BoolVar(&r.AutoApprove, "auto-approve", false, "skip interactive approval of plan before applying")
-	r.Command.Flags().StringVarP(&r.Input, "input-file", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
+	r.Command.Flags().StringVarP(&r.Input, "in", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
+	r.Command.Flags().StringVarP(&r.Output, "out", "o", "", "a file or directory where the result is stored, a filename creates a single yaml doc; a dir creates seperated yaml files")
 
 	return r
 }
@@ -55,6 +58,7 @@ type Runner struct {
 	rootPath    string
 	AutoApprove bool
 	Input       string
+	Output      string
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
@@ -71,13 +75,35 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot init kform, path is not a directory: %s", r.rootPath)
 	}
 
+	outFile := false
+	outDir := false
+	if r.Output != "" {
+		outFile = true
+		fsi, err = os.Stat(r.Output)
+		if err != nil {
+			fsi, err := os.Stat(filepath.Dir(r.Output))
+			if err != nil {
+				return fmt.Errorf("cannot init kform, output path does not exist: %s", r.Output)
+			}
+			if fsi.IsDir() {
+				outDir = false
+			} else {
+				return fmt.Errorf("cannot init kform, output path does not exist: %s", r.Output)
+			}
+		} else {
+			if fsi.IsDir() {
+				outDir = true
+			}
+		}
+
+	}
 	// captures dynamic input
 	inputVars := map[string]any{}
 	if r.Input != "" {
 		// gathers the dynamic input as if it were a package
 		fsi, err := os.Stat(r.Input)
 		if err != nil {
-			return fmt.Errorf("cannot init kform,input  path does not exist: %s", r.rootPath)
+			return fmt.Errorf("cannot init kform, input path does not exist: %s", r.Input)
 		}
 
 		// recorder need to be set before
@@ -234,30 +260,75 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 
 		log.Info("success executing package")
 
-		/*
-			fsys := fsys.NewDiskFS(r.rootPath)
-			if err := fsys.MkdirAll("out"); err != nil {
-				errCh <- err
-				return
-			}
-		*/
-
+		resources := map[string]any{}
 		dataStore.List(ctx, func(ctx context.Context, key store.Key, blockData *data.BlockData) {
-			for outputVarName, instances := range blockData.Data {
-				for idx, instance := range instances {
-					fmt.Printf("resource: %s.%s%d\n", key.Name, outputVarName, idx)
-					fmt.Printf("utpur: %v\n", instance)
-
-					b, err := yaml.Marshal(instance)
-					if err != nil {
-						errCh <- err
-						return
-					}
-
-					fmt.Println(string(b))
+			for outputVarName, dataInstances := range blockData.Data {
+				for idx, dataInstance := range dataInstances {
+					resources[fmt.Sprintf("%s.%s.%d", key.Name, outputVarName, idx)] = dataInstance
 				}
 			}
 		})
+
+		ordereredList := []string{
+			"Namespace",
+			"CustomResourceDefinition",
+		}
+
+		priorityOrderedList := []any{}
+		for _, kind := range ordereredList {
+			for resourceName, data := range resources {
+				if d, ok := data.(map[string]any); ok {
+					if d["kind"] == kind {
+						priorityOrderedList = append(priorityOrderedList, data)
+						delete(resources, resourceName)
+					}
+				}
+			}
+		}
+
+		// remaining resources
+		keys := []string{}
+		for resourceName := range resources {
+			keys = append(keys, resourceName)
+		}
+		sort.Strings(keys)
+
+		var sb strings.Builder
+
+		for _, data := range priorityOrderedList {
+			b, err := yaml.Marshal(data)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			if outDir {
+				// write individual files
+			} else {
+				sb.WriteString("\n---\n")
+				sb.WriteString(string(b))
+			}
+		}
+		for _, key := range keys {
+			data, ok := resources[key]
+			if ok {
+				b, err := yaml.Marshal(data)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				if outDir {
+					// write individual files
+				} else {
+					sb.WriteString("\n---\n")
+					sb.WriteString(string(b))
+				}
+			}
+		}
+		if !outFile {
+			fmt.Println(sb.String())
+		} else {
+			os.WriteFile(r.Output, []byte(sb.String()), 0644)
+		}
 
 		//runRecorder.Print()
 		// auto-apply -> depends on the flag if we approve the change or not.

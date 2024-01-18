@@ -1,5 +1,9 @@
 package data
 
+import (
+	"fmt"
+)
+
 const DummyKey = "BamBoozle"
 
 // BlockData contains the data of a block -> can be pre-processed or post-processed
@@ -16,6 +20,7 @@ func NewBlockData() *BlockData {
 
 // Insert inserts data in the blockdata if you know the position
 func (r *BlockData) Insert(key string, total, pos int, data any) {
+	fmt.Println("insert data", key, total, pos, data)
 	if slice, ok := r.Data[key]; !ok {
 		r.Data[key] = make([]any, total)
 	} else {

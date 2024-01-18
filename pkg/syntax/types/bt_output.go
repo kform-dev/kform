@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
 	"github.com/henderiw/store"
@@ -40,6 +41,7 @@ func (r *output) UpdatePackage(ctx context.Context) {
 	name := cctx.GetContextValue[string](ctx, CtxKeyResourceID)
 	if name == "" {
 		name = fmt.Sprintf("%s-%s-%s-%s", ko.GetAPIVersion(), ko.GetKind(), ko.GetNamespace(), ko.GetName())
+		name = strings.ReplaceAll(name, ".", "_")
 	}
 
 	blockName := fmt.Sprintf("%s.%s", blockType.String(), name)

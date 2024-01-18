@@ -15,7 +15,8 @@ type DataStore struct {
 
 // Updates the results in the store; for loop vars it uses the index of the loop var to store the result
 // since we store the results of a given blockName in a slice []any
-func (r *DataStore) UpdateData(ctx context.Context, blockName string, d any, localVars map[string]any) error {
+func (r *DataStore) UpdateData(ctx context.Context, blockName string, data any, localVars map[string]any) error {
+	fmt.Println("update data", data)
 	total, ok := localVars[kformv1alpha1.LoopKeyItemsTotal]
 	if !ok {
 		total = 1
@@ -44,7 +45,7 @@ func (r *DataStore) UpdateData(ctx context.Context, blockName string, d any, loc
 		blockdata = NewBlockData()
 	}
 	// variable exists in the varCache
-	blockdata.Insert(DummyKey, totalInt, indexInt, d)
+	blockdata.Insert(DummyKey, totalInt, indexInt, data)
 	r.Update(ctx, store.ToKey(blockName), blockdata)
 	return nil
 }

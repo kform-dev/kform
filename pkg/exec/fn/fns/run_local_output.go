@@ -36,6 +36,7 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 	if err != nil {
 		return err
 	}
+	fmt.Println("output value", value)
 	if err := r.dataStore.UpdateData(ctx, vctx.BlockName, value, localVars); err != nil {
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}

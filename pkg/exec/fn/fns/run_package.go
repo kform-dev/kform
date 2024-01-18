@@ -102,11 +102,13 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 		newDataStore.List(ctx, func(ctx context.Context, key store.Key, blockdata *data.BlockData) {
 			parts := strings.Split(key.Name, ".")
 			if parts[0] == kformv1alpha1.BlockTYPE_OUTPUT.String() {
-				if value, ok := blockdata.Data[data.DummyKey]; ok {
+				if data, ok := blockdata.Data[data.DummyKey]; ok {
 					// The result is stored in a single entry but the output keys are stored in a map
 					// for all other blockTypes we use the dummyKey but here we store the
 					// last element of the blockName as the key in the result
-					newBlockData.Insert(parts[1], 1, 0, value)
+					for i, dataInstance := range data {
+						newBlockData.Insert(parts[1], len(data), i, dataInstance)
+					}
 				}
 			}
 		})
