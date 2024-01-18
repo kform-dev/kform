@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: network-system
+  labels:
+    config-server: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      config-server: "true"
+  template:
+    metadata:
+      labels:
+        config-server: "true"
+    spec:
+      serviceAccountName: config-server
+      containers:
+      - name: config-server
+        image: input.context[0].data.config-server-image
+        #image: europe-docker.pkg.dev/srlinux/eu.gcr.io/config-server:latest
+        imagePullPolicy: Always
+        command:
+        - /app/config-server
+        args:
+        - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
+        - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-path=-"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        - "--secure-port=6443"
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: "NODE_NAME"
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        - name: "NODE_IP"
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.hostIP
+        - name: ENABLE_TARGET
+          value: "true"
+        - name: ENABLE_DISCOVERYRULE
+          value: "true"
+        - name: ENABLE_SCHEMA
+          value: "true"
+        volumeMounts:
+        - name: apiserver-certs
+          mountPath: /apiserver.local.config/certificates
+          readOnly: true
+        - name: config-store
+          mountPath: /config
+        - name: schema-store
+          mountPath: /schemas
+      - name: data-server
+        image: input.context[0].data.data-server
+        imagePullPolicy: Always
+        command:
+        - /app/data-server
+        args:
+        - "--config=/config/data-server.yaml"
+        volumeMounts:
+        - name: dataserver-config
+          mountPath: /config
+        - name: cache
+          mountPath: /cached/caches
+        - name: schema-store
+          mountPath: /schemas
+      volumes:
+      - name: dataserver-config
+        configMap:
+          name: dataserver
+      - name: apiserver-certs
+        secret:
+          secretName: config-server
+      - name: cache
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: config-store
+        persistentVolumeClaim:
+          claimName: pvc-config-store
+      - name: schema-store
+        persistentVolumeClaim:
+          claimName: pvc-schema-store

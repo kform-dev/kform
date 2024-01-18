@@ -1,0 +1,10 @@
+github.com/go-logr/logr v1.3.0 h1:2y3SDp0ZXuc6/cjLSZ+Q3ir+QB9T/iG5yYRXqsagWSY=
+github.com/go-logr/logr v1.3.0/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
+github.com/henderiw/store v0.0.0-20240115144434-8dbd1a8c0696 h1:E8gmCh6SkDnRE5hlK4aX4VejkAIbrhVql5mvaVrmVOA=
+github.com/henderiw/store v0.0.0-20240115144434-8dbd1a8c0696/go.mod h1:f6aY42ZLxECDhS+C4W+pP62HvT4zP0OrtH2HYrevbfU=
+github.com/henderiw/store v0.0.0-20240116070417-9a84a8967c8e h1:9bMR4ktNZjlNkeOQoodD/NcbYqAXzFmNpLaF3viNRuc=
+github.com/henderiw/store v0.0.0-20240116070417-9a84a8967c8e/go.mod h1:f6aY42ZLxECDhS+C4W+pP62HvT4zP0OrtH2HYrevbfU=
+k8s.io/apimachinery v0.26.0 h1:1feANjElT7MvPqp0JT6F3Ss6TWDwmcjLypwoPpEf7zg=
+k8s.io/apimachinery v0.26.0/go.mod h1:tnPmbONNJ7ByJNz9+n9kMjNP8ON+1qoAIIC70lztu74=
+sigs.k8s.io/controller-runtime v0.14.0 h1:ju2xsov5Ara6FoQuddg+az+rAxsUsTYn2IYyEKCTyDc=
+sigs.k8s.io/controller-runtime v0.14.0/go.mod h1:GaRkrY8a7UZF0kqFFbUKG7n9ICiTY5T55P1RiE3UZlU=

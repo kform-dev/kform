@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: deployment
+metadata:
+  name: config-server
+  namespace: network-system
+  labels:
+    config-server: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      config-server: "true"
+  template:
+    metadata:
+      labels:
+        config-server: "true"
+    spec:
+      serviceAccountName: config-server
+      containers:
+      - name: config-server
+        image: input.context[0].data.configServerImage
+        imagePullPolicy: always
+      - name: data-server
+        image: input.context[0].data.dataServerImage
+        imagePullPolicy: always

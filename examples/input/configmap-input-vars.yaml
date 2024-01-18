@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: configMap
+metadata:
+  name: context
+  namespace: network-system
+  annotations:
+    kform.dev/block-type: input
+    kform.dev/resource-id: context ## this serves as a way to add default and manage the merge 
+    kform.dev/default: "true"
+data: 
+  dataServerImage: "dynamic-input-deta-server:latest"
+  configServerImage: "dynamic-input-config-server:latest"
