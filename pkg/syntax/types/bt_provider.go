@@ -32,7 +32,7 @@ func (r *provider) UpdatePackage(ctx context.Context) {
 	blockType := cctx.GetContextValue[kformv1alpha1.BlockType](ctx, CtxKeyBlockType)
 	ko := cctx.GetContextValue[*fn.KubeObject](ctx, CtxKeyKubeObject)
 	name := cctx.GetContextValue[string](ctx, CtxKeyResourceID)
-	if name != "" {
+	if name == "" {
 		name = ko.GetName()
 	}
 	blockName := name
