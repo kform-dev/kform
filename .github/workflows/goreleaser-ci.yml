@@ -2,9 +2,9 @@
 name: goreleaser ci
 on:
   workflow_dispatch:
-  #push:
-  #  tags:
-  #    - v*
+  push:
+    tags:
+      - v*
 jobs:
   build:
     permissions: write-all
