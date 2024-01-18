@@ -1,7 +1,6 @@
 ---
 name: goreleaser ci
 on:
-  workflow_dispatch:
   push:
     tags:
       - v*
