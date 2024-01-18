@@ -1,7 +1,7 @@
 package types
 
 import (
-	"encoding/json"
+	"fmt"
 
 	"github.com/henderiw-nephio/kform/tools/pkg/dag"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
@@ -30,11 +30,13 @@ type VertexContext struct {
 }
 
 func (r *VertexContext) String() string {
-	b, err := json.Marshal(r)
-	if err != nil {
-		return ""
-	}
-	return string(b)
+	return fmt.Sprintf(
+		"fileName: %s, packageName: %s, blockType: %s, blockName: %s",
+		r.FileName,
+		r.PackageName,
+		r.BlockType.String(),
+		r.BlockName,
+	)
 }
 
 func (r *VertexContext) AddDAG(d dag.DAG[*VertexContext]) {

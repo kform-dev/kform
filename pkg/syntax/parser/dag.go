@@ -10,7 +10,7 @@ import (
 
 func (r *KformParser) generateProviderDAG(ctx context.Context, unrefed []string) {
 	log := log.FromContext(ctx)
-	log.Info("generating provider DAG")
+	log.Debug("generating provider DAG")
 	rootPackage, err := r.GetRootPackage(ctx)
 	if err != nil {
 		r.recorder.Record(diag.DiagFromErr(err))
@@ -23,7 +23,7 @@ func (r *KformParser) generateProviderDAG(ctx context.Context, unrefed []string)
 
 func (r *KformParser) generateDAG(ctx context.Context) {
 	log := log.FromContext(ctx)
-	log.Info("generating DAG")
+	log.Debug("generating DAG")
 	for packageName, pkg := range r.ListPackages(ctx) {
 		// generate a regular DAG
 		pkg.GenerateDAG(ctx, false, []string{})

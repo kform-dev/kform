@@ -2,7 +2,6 @@ package render
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,7 +36,6 @@ func (r *commonRenderer) Render(ctx context.Context, x any) (any, error) {
 				x[k], err = r.RenderFn(ctx, v)
 				if err != nil {
 					log.Info("render map[string]any", "err", err.Error())
-					fmt.Println(err)
 					// this is to handle cell rendering
 					if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 						delete(x, k)
@@ -57,7 +55,6 @@ func (r *commonRenderer) Render(ctx context.Context, x any) (any, error) {
 				newx, err := r.RenderFn(ctx, v)
 				if err != nil {
 					log.Info("render []any", "err", err.Error())
-					fmt.Println(err)
 					if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 						x[i] = nil
 						continue

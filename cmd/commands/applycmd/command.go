@@ -185,12 +185,14 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	rootPackage.DAG.Print("root")
-	rootPackage.ProviderDAG.Print("root")
+	//rootPackage.DAG.Print("root")
+	//rootPackage.ProviderDAG.Print("root")
 
-	for blockName, block := range types.ListBlocks(ctx, rootPackage.Blocks) {
-		fmt.Println("blockData", blockName, block.GetData())
-	}
+	/*
+		for blockName, block := range types.ListBlocks(ctx, rootPackage.Blocks) {
+			fmt.Println("blockData", blockName, block.GetData())
+		}
+	*/
 
 	/*
 		runRecorder := recorder.New[diag.Diagnostic]()

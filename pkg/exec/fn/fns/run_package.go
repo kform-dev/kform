@@ -59,7 +59,7 @@ Per execution instance (single or range (count/for_each))
 
 func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
 	log := log.FromContext(ctx).With("vertexContext", vctx.String(), "provider", r.provider)
-	log.Info("run instance")
+	log.Debug("run instance")
 	// render the new vars input
 	newDataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
 
@@ -68,7 +68,6 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	// 1. for KRM based input this is presented as blockData where the key of localVars is data.Blockdata
 	// 2. Count/ForEach stay local in the src package to copy data accross -> TBD
 	for blockName, blockData := range localVars {
-		fmt.Println("package input", blockName)
 		data, ok := blockData.(*data.BlockData)
 		if !ok {
 			return fmt.Errorf("unexpected data, expecting *data.BlockData, got: %s", reflect.TypeOf(blockData).Name())

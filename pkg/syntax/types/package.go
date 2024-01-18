@@ -3,7 +3,6 @@ package types
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -115,7 +114,6 @@ func (r *Package) ResolveDAGDependencies(ctx context.Context) {
 
 func (r *Package) resolveDependencies(ctx context.Context, name string, b Block) {
 	for d, dctx := range b.GetDependencies() {
-		fmt.Println("dependency", d)
 		switch strings.Split(d, ".")[0] {
 		case kformv1alpha1.LoopKeyEach:
 			if !b.HasForEach() {
@@ -233,7 +231,6 @@ func (r *Package) GenerateDAG(ctx context.Context, provider bool, unrefed []stri
 	// connect the dag based on the depdenencies
 	for n, v := range d.GetVertices() {
 		deps := v.GetBlockDependencies()
-		//fmt.Println("block dependencies", n, deps)
 		for dep := range deps {
 			d.Connect(ctx, dep, n)
 		}

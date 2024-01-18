@@ -60,7 +60,7 @@ func (r *ExecHandler) PostRun(ctx context.Context, start, stop time.Time, succes
 
 func (r *ExecHandler) BlockRun(ctx context.Context, vertexName string, vctx *types.VertexContext) bool {
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
-	log.Info("run block start...")
+	log.Debug("run block start...")
 	recorder := r.Recorder
 	start := time.Now()
 	success := true
@@ -70,7 +70,7 @@ func (r *ExecHandler) BlockRun(ctx context.Context, vertexName string, vctx *typ
 	} else {
 		recorder.Record(diag.Success(vctx.String(), start, "block total run"))
 	}
-	log.Info("run block finished...", "success", success)
+	log.Debug("run block finished...", "success", success)
 	return success
 }
 
@@ -120,7 +120,7 @@ type item struct {
 
 func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attributes) (bool, *items, error) {
 	log := log.FromContext(ctx)
-	log.Info("getLoopItems", "attr", attr)
+	log.Debug("getLoopItems", "attr", attr)
 	renderer := celrender.New(r.DataStore, map[string]any{})
 	isForEach := false
 	items := initItems(1)
@@ -136,12 +136,12 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 					return isForEach, items, errors.Wrap(err, "render loop forEach failed")
 				}
 			}
-			log.Info("getLoopItems forEach render output", "value type", reflect.TypeOf(v), "value", v)
+			log.Debug("getLoopItems forEach render output", "value type", reflect.TypeOf(v), "value", v)
 			switch v := v.(type) {
 			case []any:
 				// in a list we return key = int, val = any
 				for k, v := range v {
-					log.Info("getLoopItems forEach insert item", "k", k, "v", v)
+					log.Debug("getLoopItems forEach insert item", "k", k, "v", v)
 					items.Add(k, item{key: k, val: v})
 				}
 			case map[any]any:

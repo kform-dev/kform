@@ -96,7 +96,7 @@ func (r *dagExecutor[T]) init(ctx context.Context) {
 	//r.execMap = map[string]*execContext{}
 	for vertexName, v := range r.d.GetVertices() {
 		//fmt.Printf("executor init vertexName: %s\n", vertexName)
-		log.Info("init", "vertexName", vertexName)
+		log.Debug("init", "vertexName", vertexName)
 		r.execMap[vertexName] = &execContext[T]{
 			execName:      r.cfg.Name,
 			vertexName:    vertexName,
@@ -149,7 +149,7 @@ func (r *dagExecutor[T]) Run(ctx context.Context) bool {
 
 func (r *dagExecutor[T]) execute(ctx context.Context, from string, init bool) bool {
 	log := log.FromContext(ctx).With("from", from, "init", init)
-	log.Info("execute")
+	log.Debug("execute")
 	//fmt.Printf("execute from: %s init: %t\n", from, init)
 	execCtx := r.getExecContext(from)
 	//fmt.Printf("execute getExecContext from: %s init: %t, wCtx: %#v\n", from, init, wCtx)
@@ -158,12 +158,12 @@ func (r *dagExecutor[T]) execute(ctx context.Context, from string, init bool) bo
 		// updated the exec context with the visited time
 		execCtx.updateVisted()
 		// execute the vertex function
-		log.Info("execute scheduled vertex", "vertexname", execCtx.vertexName)
+		log.Debug("execute scheduled vertex", "vertexname", execCtx.vertexName)
 		//fmt.Printf("execute scheduled vertex: %s\n", wCtx.vertexName)
 		go func() {
 			if !r.dependenciesFinished(execCtx.depChs) {
 				//fmt.Printf("%s not finished\n", from)
-				log.Info("not finished", "vertexname", from)
+				log.Debug("not finished", "vertexname", from)
 			}
 			if !execCtx.waitDependencies(ctx) {
 				// TODO gather info why the failure occured
@@ -203,13 +203,13 @@ func (r *dagExecutor[T]) dependenciesFinished(dep map[string]chan bool) bool {
 func (r *dagExecutor[T]) waitFunctionCompletion(ctx context.Context) bool {
 	//fmt.Printf("main walk wait waiting for function completion...\n")
 	log := log.FromContext(ctx)
-	log.Info("main walk wait waiting for function completion...")
+	log.Debug("main walk wait waiting for function completion...")
 DepSatisfied:
 	for vertexName, doneFnCh := range r.fnDoneMap {
 		for {
 			select {
 			case d, ok := <-doneFnCh:
-				log.Info("main walk wait rcvd fn done", "from", vertexName, "success", d, "ok", ok)
+				log.Debug("main walk wait rcvd fn done", "from", vertexName, "success", d, "ok", ok)
 				//fmt.Printf("main walk wait rcvd fn done from %s, d: %t, ok: %t\n", vertexName, d, ok)
 				if !d {
 					r.cancelFn()
@@ -220,12 +220,12 @@ DepSatisfied:
 				// called when the controller gets cancelled
 				return false
 			case <-time.After(time.Second * 5):
-				log.Info("main walk wait timeout, waiting", "for", vertexName)
+				log.Debug("main walk wait timeout, waiting", "for", vertexName)
 				//fmt.Printf("main walk wait timeout, waiting for %s\n", vertexName)
 			}
 		}
 	}
-	log.Info("main walk wait function completion waiting finished - bye !")
+	log.Debug("main walk wait function completion waiting finished - bye !")
 	//fmt.Printf("main walk wait function completion waiting finished - bye !\n")
 	return true
 }

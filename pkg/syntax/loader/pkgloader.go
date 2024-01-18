@@ -77,7 +77,7 @@ func GetKforms(ctx context.Context, path string, input bool) (*kformv1alpha1.Kfo
 				ko.SetAnnotation(kformv1alpha1.KformAnnotationKey_BLOCK_TYPE, kformv1alpha1.BlockTYPE_INPUT.String())
 			}
 			kforms[filepath.Join(path, key.Name)] = ko
-			log.Info("read kubeObject", "fileName", key.Name, "kind", ko.GetKind(), "name", ko.GetName())
+			log.Debug("read kubeObject", "fileName", key.Name, "kind", ko.GetKind(), "name", ko.GetName())
 		}
 	})
 

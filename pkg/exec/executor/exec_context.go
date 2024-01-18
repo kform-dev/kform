@@ -119,18 +119,18 @@ func (r *execContext[T]) run(ctx context.Context) {
 	for k := range doneChs {
 		downVertices = append(downVertices, k)
 	}
-	log.Info("block run finished", "downVertices", downVertices)
+	log.Debug("block run finished", "downVertices", downVertices)
 	// signal to the dependent function the result of the vertex fn execution
 	for vertexName, doneCh := range doneChs {
 		doneCh <- success
 		close(doneCh)
-		log.Info("sent done", "from", r.vertexName, "to", vertexName)
+		log.Debug("sent done", "from", r.vertexName, "to", vertexName)
 		//fmt.Printf("execContext execName %s vertexName: %s -> %s send done\n", r.execName, r.vertexName, vertexName)
 	}
 	// signal the result of the vertex execution to the main walk
 	r.doneFnCh <- success
 	close(r.doneFnCh)
-	log.Info("done")
+	log.Debug("done")
 	//fmt.Printf("execContext execName %s vertexName: %s -> walk main fn done\n", r.execName, r.vertexName)
 }
 
@@ -138,7 +138,7 @@ func (r *execContext[T]) waitDependencies(ctx context.Context) bool {
 	// for each dependency wait till a it completed, either through
 	// the dependency Channel or cancel or
 	log := log.FromContext(ctx).With("vertexName", r.vertexName)
-	log.Info("wait dependencies", "deps", r.deps)
+	log.Debug("wait dependencies", "deps", r.deps)
 	//fmt.Printf("execContext execName %s vertexName: %s wait dependencies: %v\n", r.execName, r.vertexName, r.depChs)
 DepSatisfied:
 	for depVertexName, depCh := range r.depChs {
@@ -147,7 +147,7 @@ DepSatisfied:
 		for {
 			select {
 			case d, ok := <-depCh:
-				log.Info("rcvd done", "from", depVertexName, "to", r.vertexName, "success", d, "ok", ok)
+				log.Debug("rcvd done", "from", depVertexName, "to", r.vertexName, "success", d, "ok", ok)
 				//fmt.Printf("execContext execName %s: %s -> %s rcvd done, d: %t, ok: %t\n", r.execName, depVertexName, r.vertexName, d, ok)
 				if ok {
 					continue DepSatisfied
@@ -158,12 +158,12 @@ DepSatisfied:
 				}
 				continue DepSatisfied
 			case <-time.After(time.Second * 5):
-				log.Info("rwait timeout, waiting", "for", depVertexName)
+				log.Debug("rwait timeout, waiting", "for", depVertexName)
 				//fmt.Printf("execContext execName %s vertexName: %s wait timeout, is waiting for %s\n", r.execName, r.vertexName, depVertexName)
 			}
 		}
 	}
-	log.Info("finished waiting ...")
+	log.Debug("finished waiting ...")
 	//fmt.Printf("execContext execName %s vertexName: %s finished waiting\n", r.execName, r.vertexName)
 	return true
 }
