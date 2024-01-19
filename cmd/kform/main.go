@@ -13,7 +13,7 @@ import (
 	"os/signal"
 
 	"github.com/henderiw/logger/log"
-	"github.com/kform-dev/kform/cmd/commands"
+	"github.com/kform-dev/kform/cmd/kform/commands"
 )
 
 const (

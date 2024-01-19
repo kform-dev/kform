@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/adrg/xdg"
-	"github.com/kform-dev/kform/cmd/commands/applycmd"
+	"github.com/kform-dev/kform/cmd/kform/commands/applycmd"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
