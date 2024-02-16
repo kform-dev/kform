@@ -174,7 +174,7 @@ func getData(ctx context.Context, ko *fn.KubeObject) (any, error) {
 	if ko == nil {
 		return nil, fmt.Errorf("cannot create a block without a kubeobject")
 	}
-	var v any
+	var v map[string]any
 	if err := yaml.Unmarshal([]byte(ko.String()), &v); err != nil {
 		return nil, fmt.Errorf("cannot unmarshal the kubeobject, err: %s", err.Error())
 	}
