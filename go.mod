@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/henderiw-nephio/kform v0.0.2
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
-	github.com/henderiw/store v0.0.0-20240116070417-9a84a8967c8e
+	github.com/henderiw/store v0.0.0-20240218233324-62dae295637b
 	github.com/nephio-project/nephio/krm-functions/lib v0.0.0-20240112001535-96b08ff4acb3
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0

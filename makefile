@@ -29,7 +29,7 @@ vet: ## Run go vet against code.
 
 .PHONY: all
 all: fmt vet ## Build manager binary.
-	go build -ldflags "-X github.com/kform-dev/kform/cmd/kform/commands.version=${GIT_COMMIT}" -o $(LOCALBIN)/kform -v cmd/main.go
+	go build -ldflags "-X github.com/kform-dev/kform/cmd/kform/commands.version=${GIT_COMMIT}" -o $(LOCALBIN)/kform -v cmd/kform/main.go
 
 ##@ Build Dependencies
 

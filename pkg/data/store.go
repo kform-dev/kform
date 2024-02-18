@@ -36,16 +36,25 @@ func (r *DataStore) UpdateData(ctx context.Context, blockName string, data any, 
 	if indexInt >= totalInt {
 		return fmt.Errorf("index cannot be bigger or equal to total index: %d, totol: %d", indexInt, totalInt)
 	}
-
-	// if the data already exists we can add the content to it
-	blockdata, err := r.Get(ctx, store.ToKey(blockName))
-	if err != nil {
-		// data does not exist in the dataStore
-		blockdata = NewBlockData()
-	}
-	// variable exists in the varCache
-	blockdata.Insert(DummyKey, totalInt, indexInt, data)
-	r.Update(ctx, store.ToKey(blockName), blockdata)
+	r.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockdata *BlockData) *BlockData {
+		if blockdata == nil {
+			blockdata = NewBlockData()
+		}
+		blockdata.Insert(DummyKey, totalInt, indexInt, data)
+		return blockdata
+	})
+	/*
+		// if the data already exists we can add the content to it
+		blockdata, err := r.Get(ctx, store.ToKey(blockName))
+		if err != nil {
+			// data does not exist in the dataStore
+			blockdata = NewBlockData()
+		}
+		//fmt.Println("updateData", total, index, indexInt, blockdata)
+		// variable exists in the varCache
+		blockdata.Insert(DummyKey, totalInt, indexInt, data)
+		r.Update(ctx, store.ToKey(blockName), blockdata)
+	*/
 	return nil
 }
 

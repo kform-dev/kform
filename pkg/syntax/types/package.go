@@ -91,10 +91,12 @@ func (r *Package) AddDependencies(ctx context.Context) {
 			continue
 		}
 		deprenderer.Render(ctx, dstData) // we need to avoid adding the Value here since the renderer adds nil values
+
+		// TODO: add dependencies for attributes
+
 		block.UpdateDependencies(deprenderer.GetDependencies(ctx))
 		block.UpdatePkgDependencies(deprenderer.GetPkgDependencies(ctx))
 		r.Blocks.Update(ctx, store.ToKey(blockName), block)
-
 	}
 }
 

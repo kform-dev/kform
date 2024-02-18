@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn/fns"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/yaml"
 
 	//docs "github.com/kform-dev/kform/internal/docs/generated/applydocs"
@@ -78,7 +80,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	outFile := false
 	outDir := false
 	if r.Output != "" {
-		outFile = true
+		//
 		fsi, err = os.Stat(r.Output)
 		if err != nil {
 			fsi, err := os.Stat(filepath.Dir(r.Output))
@@ -86,6 +88,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 				return fmt.Errorf("cannot init kform, output path does not exist: %s", r.Output)
 			}
 			if fsi.IsDir() {
+				outFile = true
 				outDir = false
 			} else {
 				return fmt.Errorf("cannot init kform, output path does not exist: %s", r.Output)
@@ -93,6 +96,10 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		} else {
 			if fsi.IsDir() {
 				outDir = true
+			}
+			if fsi.Mode().IsRegular() {
+				outFile = true
+				outDir = false
 			}
 		}
 
@@ -264,55 +271,92 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 
 		resources := map[string]any{}
 		dataStore.List(ctx, func(ctx context.Context, key store.Key, blockData *data.BlockData) {
-			for outputVarName, dataInstances := range blockData.Data {
+			for _, dataInstances := range blockData.Data {
 				for idx, dataInstance := range dataInstances {
-					resources[fmt.Sprintf("%s.%s.%d", key.Name, outputVarName, idx)] = dataInstance
+					b, err := yaml.Marshal(dataInstance)
+					if err != nil {
+						errCh <- err
+						return
+					}
+					u := &unstructured.Unstructured{}
+					if err := yaml.Unmarshal(b, u); err != nil {
+						errCh <- err
+						return
+					}
+					apiVersion := strings.ReplaceAll(u.GetAPIVersion(), "/", "_")
+					kind := u.GetKind()
+					name := u.GetName()
+					namespace := u.GetNamespace()
+
+					annotations := u.GetAnnotations()
+					for k := range annotations {
+						for _, kformKey := range kformv1alpha1.KformAnnotations {
+							if k == kformKey {
+								delete(annotations, k)
+								continue
+							}
+						}
+					}
+					if len(annotations) != 0 {
+						u.SetAnnotations(annotations)
+					} else {
+						u.SetAnnotations(nil)
+					}
+
+					b, err = yaml.Marshal(u)
+					if err != nil {
+						errCh <- err
+						return
+					}
+					var x any
+					if err := yaml.Unmarshal(b, &x); err != nil {
+						errCh <- err
+						return
+					}
+
+					resources[fmt.Sprintf("%s_%s_%s_%s_%d.yaml", apiVersion, kind, name, namespace, idx)] = x
 				}
 			}
 		})
 
-		ordereredList := []string{
-			"Namespace",
-			"CustomResourceDefinition",
-		}
-
-		priorityOrderedList := []any{}
-		for _, kind := range ordereredList {
+		if !outFile {
 			for resourceName, data := range resources {
-				if d, ok := data.(map[string]any); ok {
-					if d["kind"] == kind {
-						priorityOrderedList = append(priorityOrderedList, data)
-						delete(resources, resourceName)
+				b, err := yaml.Marshal(data)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				fmt.Println(path.Join(r.Output, resourceName))
+				os.WriteFile(path.Join(r.Output, resourceName), b, 0644)
+			}
+		} else {
+			ordereredList := []string{
+				"Namespace",
+				"CustomResourceDefinition",
+			}
+
+			priorityOrderedList := []any{}
+			for _, kind := range ordereredList {
+				for resourceName, data := range resources {
+					if d, ok := data.(map[string]any); ok {
+						if d["kind"] == kind {
+							priorityOrderedList = append(priorityOrderedList, data)
+							delete(resources, resourceName)
+						}
 					}
 				}
 			}
-		}
 
-		// remaining resources
-		keys := []string{}
-		for resourceName := range resources {
-			keys = append(keys, resourceName)
-		}
-		sort.Strings(keys)
-
-		var sb strings.Builder
-
-		for _, data := range priorityOrderedList {
-			b, err := yaml.Marshal(data)
-			if err != nil {
-				errCh <- err
-				return
+			// remaining resources
+			keys := []string{}
+			for resourceName := range resources {
+				keys = append(keys, resourceName)
 			}
-			if outDir {
-				// write individual files
-			} else {
-				sb.WriteString("\n---\n")
-				sb.WriteString(string(b))
-			}
-		}
-		for _, key := range keys {
-			data, ok := resources[key]
-			if ok {
+			sort.Strings(keys)
+
+			var sb strings.Builder
+
+			for _, data := range priorityOrderedList {
 				b, err := yaml.Marshal(data)
 				if err != nil {
 					errCh <- err
@@ -325,10 +369,22 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 					sb.WriteString(string(b))
 				}
 			}
-		}
-		if !outFile {
-			fmt.Println(sb.String())
-		} else {
+			for _, key := range keys {
+				data, ok := resources[key]
+				if ok {
+					b, err := yaml.Marshal(data)
+					if err != nil {
+						errCh <- err
+						return
+					}
+					if outDir {
+						// write individual files
+					} else {
+						sb.WriteString("\n---\n")
+						sb.WriteString(string(b))
+					}
+				}
+			}
 			os.WriteFile(r.Output, []byte(sb.String()), 0644)
 		}
 

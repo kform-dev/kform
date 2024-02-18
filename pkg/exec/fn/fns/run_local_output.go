@@ -32,7 +32,11 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 	// if the BlockContext Value is defined we render the expected output
 	// the syntax parser should validate this, meaning the value should always be defined
 	renderer := celrender.New(r.dataStore, localVars)
-	value, err := renderer.Render(ctx, vctx.Data.Data[data.DummyKey][0])
+	inputData, err := types.DeepCopy(vctx.Data.Data[data.DummyKey][0])
+	if err != nil {
+		return err
+	}
+	value, err := renderer.Render(ctx, inputData)
 	if err != nil {
 		return err
 	}

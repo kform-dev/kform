@@ -24,3 +24,26 @@ const (
 	KformAnnotationKey_ALIAS         = KformAnnotationKeyPrefix + "/" + "alias"
 	KformAnnotationKey_HOSTNAME      = KformAnnotationKeyPrefix + "/" + "hostname"
 )
+
+var KformAnnotations = []string{
+	KformAnnotationKey_BLOCK_TYPE,
+	KformAnnotationKey_RESOURCE_TYPE,
+	KformAnnotationKey_RESOURCE_ID,
+	KformAnnotationKey_COUNT,
+	KformAnnotationKey_FOR_EACH,
+	KformAnnotationKey_DEPENDS_ON,
+	KformAnnotationKey_DEFAULT,
+	KformAnnotationKey_SOURCE,
+	KformAnnotationKey_VERSION,
+	KformAnnotationKey_DESCRIPTION,
+	KformAnnotationKey_SENSITIVE,
+	KformAnnotationKey_LIFECYCLE,
+	KformAnnotationKey_PRECONDITION,
+	KformAnnotationKey_POSTCONDITION,
+	KformAnnotationKey_PROVIDERS,
+	KformAnnotationKey_PROVIDER,
+	KformAnnotationKey_PROVISIONER,
+	KformAnnotationKey_ORGANIZATION,
+	KformAnnotationKey_ALIAS,
+	KformAnnotationKey_HOSTNAME,
+}

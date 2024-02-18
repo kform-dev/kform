@@ -56,8 +56,8 @@ github.com/henderiw-nephio/kform v0.0.2 h1:PIOjEIK1WgtbAwH/TvmnTsZeQzbGvHxwJWddX
 github.com/henderiw-nephio/kform v0.0.2/go.mod h1:buFeIsHvaHDjoSG01g3CAZl7urlWYA6vwpnjnDI5pVE=
 github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe h1:+R53KH7fW+pmqlfSYVTCGPn8pj6gqBGcQ0nq7L1h8+g=
 github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe/go.mod h1:KNMXpSG8v0BAfIh5rZL4hgow3pBWNbkmmb28x9C5s+Y=
-github.com/henderiw/store v0.0.0-20240116070417-9a84a8967c8e h1:9bMR4ktNZjlNkeOQoodD/NcbYqAXzFmNpLaF3viNRuc=
-github.com/henderiw/store v0.0.0-20240116070417-9a84a8967c8e/go.mod h1:f6aY42ZLxECDhS+C4W+pP62HvT4zP0OrtH2HYrevbfU=
+github.com/henderiw/store v0.0.0-20240218233324-62dae295637b h1:d7sE1vmyXX/FitaBoSGAL2nwfrnWWFKzT4wJew5Cwhw=
+github.com/henderiw/store v0.0.0-20240218233324-62dae295637b/go.mod h1:f6aY42ZLxECDhS+C4W+pP62HvT4zP0OrtH2HYrevbfU=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=

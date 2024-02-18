@@ -106,6 +106,8 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 					// for all other blockTypes we use the dummyKey but here we store the
 					// last element of the blockName as the key in the result
 					for i, dataInstance := range data {
+						i := i
+						dataInstance := dataInstance
 						newBlockData.Insert(parts[1], len(data), i, dataInstance)
 					}
 				}

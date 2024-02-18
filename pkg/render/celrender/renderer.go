@@ -41,6 +41,11 @@ func (r *renderer) isCelExression(ctx context.Context, expr string) bool {
 			return true
 		}
 	}
+	for ref := range r.localVars {
+		if strings.Contains(expr, ref) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -92,7 +97,7 @@ func (r *renderer) stringRenderer(ctx context.Context, expr string) (any, error)
 			expr = strings.ReplaceAll(expr, origVar, newVar)
 			newVars[newVar] = v
 		}
-		log.Info("expression", "expr", expr)
+		//log.Info("expression", "expr", expr)
 		//log.Info("expression", "vars", newVars)
 		env, err := getCelEnv(newVars)
 		if err != nil {

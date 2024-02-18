@@ -177,6 +177,9 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 			case int64:
 				items = initItems(int(v))
 				return isForEach, items, nil
+			case float64:
+				items = initItems(int(v))
+				return isForEach, items, nil
 			default:
 				return isForEach, items, errors.Errorf("render count return an unsupported type; support [int64, string], got: %s", reflect.TypeOf(v))
 			}
