@@ -57,7 +57,7 @@ func concat(strs traits.Lister, separator string) (string, error) {
 		elem := strs.Get(i)
 		str, ok := elem.(types.String)
 		if !ok {
-			return "", fmt.Errorf("join: invalid input: %v", elem)
+			str = types.String(fmt.Sprintf("%v", elem))
 		}
 		sb.WriteString(string(str))
 	}
