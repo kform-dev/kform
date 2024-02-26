@@ -47,12 +47,14 @@ func GetKforms(ctx context.Context, path string, input bool) (*kformv1alpha1.Kfo
 	}
 	data, err := reader.Read(ctx, pkgio.NewData())
 	if err != nil {
+		fmt.Println("data read err", err.Error())
 		return nil, nil, err
 	}
 
 	data.List(ctx, func(ctx context.Context, key store.Key, data []byte) {
 		ko, err := fn.ParseKubeObject([]byte(data))
 		if err != nil {
+			fmt.Println("kubeObject parsing failed,", err.Error())
 			recorder.Record(diag.DiagErrorf("kubeObject parsing failed, path: %s, err: %s", filepath.Join(path, key.Name), err.Error()))
 			return
 		}
@@ -80,6 +82,7 @@ func GetKforms(ctx context.Context, path string, input bool) (*kformv1alpha1.Kfo
 			log.Debug("read kubeObject", "fileName", key.Name, "kind", ko.GetKind(), "name", ko.GetName())
 		}
 	})
+	fmt.Println("kubeObject parsing succeeded,")
 
 	return kfile, kforms, nil
 }

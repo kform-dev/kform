@@ -15,6 +15,18 @@ var YAMLMatch = []string{"*.yaml", "*.yml"}
 var JSONMatch = []string{"*.json"}
 var MatchAll = []string{"*"}
 
+func isYamlMatch(matches []string) bool {
+	if len(matches) != 2 {
+		return false
+	}
+	for i, match := range matches {
+		if match != YAMLMatch[i] {
+			return false
+		}
+	}
+	return true
+}
+
 //var PkgMatch = []string{fmt.Sprintf("*.%s", kformOciPkgExt)}
 
 type Reader[T1 any] interface {

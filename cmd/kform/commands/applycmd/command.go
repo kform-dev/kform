@@ -319,17 +319,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 			}
 		})
 
-		if !outFile {
-			for resourceName, data := range resources {
-				b, err := yaml.Marshal(data)
-				if err != nil {
-					errCh <- err
-					return
-				}
-				fmt.Println(path.Join(r.Output, resourceName))
-				os.WriteFile(path.Join(r.Output, resourceName), b, 0644)
-			}
-		} else {
+		if !outDir {
 			ordereredList := []string{
 				"Namespace",
 				"CustomResourceDefinition",
@@ -385,7 +375,22 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 					}
 				}
 			}
-			os.WriteFile(r.Output, []byte(sb.String()), 0644)
+			if outFile {
+				os.WriteFile(r.Output, []byte(sb.String()), 0644)
+			} else {
+				fmt.Println(sb.String())
+			}
+
+		} else {
+			for resourceName, data := range resources {
+				b, err := yaml.Marshal(data)
+				if err != nil {
+					errCh <- err
+					return
+				}
+				fmt.Println(path.Join(r.Output, resourceName))
+				os.WriteFile(path.Join(r.Output, resourceName), b, 0644)
+			}
 		}
 
 		//runRecorder.Print()
