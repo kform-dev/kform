@@ -7,19 +7,19 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/apparentlymart/go-versions v1.0.2
 	github.com/google/cel-go v0.18.2
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/henderiw-nephio/kform v0.0.2
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
-	github.com/henderiw/store v0.0.0-20240218233324-62dae295637b
+	github.com/henderiw/store v0.0.0-20240227111821-0eb66e3c7b40
 	github.com/nephio-project/nephio/krm-functions/lib v0.0.0-20240112001535-96b08ff4acb3
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/sync v0.5.0
-	k8s.io/apimachinery v0.28.2
+	golang.org/x/sync v0.6.0
+	k8s.io/apimachinery v0.28.6
 	sigs.k8s.io/controller-runtime v0.16.2
-	sigs.k8s.io/yaml v1.3.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
