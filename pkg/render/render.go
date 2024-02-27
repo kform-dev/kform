@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"github.com/henderiw/logger/log"
 )
 
 type Renderer interface {
