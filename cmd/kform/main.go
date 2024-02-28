@@ -14,11 +14,7 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/kform-dev/kform/cmd/kform/commands"
-)
-
-const (
-	defaultConfigFileSubDir = "kform"
-	defaultConfigFileName   = "kform.yaml"
+	"github.com/kform-dev/kform/cmd/kform/globals"
 )
 
 func main() {
@@ -28,7 +24,7 @@ func main() {
 // runMain does the initial setup to setup logging
 func runMain() int {
 	// init logging
-	l := log.NewLogger(&log.HandlerOptions{Name: "kform-logger", AddSource: false})
+	l := log.NewLogger(&log.HandlerOptions{Name: "kform-logger", AddSource: false, MinLevel: globals.LogLevel})
 	slog.SetDefault(l)
 
 	// init context

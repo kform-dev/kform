@@ -75,6 +75,7 @@ func (r *ExecHandler) BlockRun(ctx context.Context, vertexName string, vctx *typ
 }
 
 func (r *ExecHandler) runInstances(ctx context.Context, vctx *types.VertexContext) error {
+	log := log.FromContext(ctx)
 	recorder := r.Recorder
 	isForEach, items, err := r.getLoopItems(ctx, vctx.Attributes)
 	if err != nil {
@@ -98,9 +99,11 @@ func (r *ExecHandler) runInstances(ctx context.Context, vctx *types.VertexContex
 			start := time.Now()
 			// lookup the blockType in the map and run the block instance
 			if err := r.fnsMap.Run(ctx, vctx, localVars); err != nil {
+				log.Debug("run result", "error", err)
 				recorder.Record(diag.FromErrWithTimeContext(vctx.String(), start, fmt.Errorf("failed running block instance: %s", err.Error())))
 				return err
 			}
+			log.Debug("run result", "error", err)
 			recorder.Record(diag.Success(vctx.String(), start, "block instance run"))
 			select {
 			case <-ctx.Done():

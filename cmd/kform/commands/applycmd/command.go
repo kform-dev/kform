@@ -3,6 +3,7 @@ package applycmd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -22,6 +23,7 @@ import (
 
 	//docs "github.com/kform-dev/kform/internal/docs/generated/applydocs"
 	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
+	"github.com/kform-dev/kform/cmd/kform/globals"
 	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
@@ -32,8 +34,10 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string) *Runner {
-	r := &Runner{}
+func NewRunner(ctx context.Context, version string, debug bool) *Runner {
+	r := &Runner{
+		debug: debug,
+	}
 	cmd := &cobra.Command{
 		Use:  "apply [flags]",
 		Args: cobra.ExactArgs(1),
@@ -52,8 +56,8 @@ func NewRunner(ctx context.Context, version string) *Runner {
 	return r
 }
 
-func NewCommand(ctx context.Context, version string) *cobra.Command {
-	return NewRunner(ctx, version).Command
+func NewCommand(ctx context.Context, version string, debug bool) *cobra.Command {
+	return NewRunner(ctx, version, debug).Command
 }
 
 type Runner struct {
@@ -62,11 +66,14 @@ type Runner struct {
 	AutoApprove bool
 	Input       string
 	Output      string
+	debug       bool
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx := c.Context()
 	log := log.FromContext(ctx)
+
+	globals.LogLevel.Set(slog.LevelDebug)
 
 	r.rootPath = args[0]
 	// check if the root path exists
@@ -225,12 +232,21 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	}
 	log.Info("success executing provider DAG")
 
+	defer func() {
+		providerInstances.List(ctx, func(ctx context.Context, key store.Key, provider plugin.Provider) {
+			if provider != nil {
+				provider.Close(ctx)
+				log.Info("closing provider", "nsn", key.Name)
+			}
+			log.Info("closing provider nil", "nsn", key.Name)
+		})
+	}()
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	// doneCh := make(chan struct{})
 	errCh := make(chan error, 1)
-
 	go func() {
 		defer close(errCh)
 
@@ -258,7 +274,10 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 			return
 		}
 
-		log.Info("success executing package")
+		if runRecorder.Get().HasError() {
+			errCh <- runRecorder.Get().Error()
+			return
+		}
 
 		resources := map[string]any{}
 		dataStore.List(ctx, func(ctx context.Context, key store.Key, blockData *data.BlockData) {
@@ -392,12 +411,5 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		log.Error("exec failed", "err", err)
 	}
 
-	providerInstances.List(ctx, func(ctx context.Context, key store.Key, provider plugin.Provider) {
-		if provider != nil {
-			provider.Close(ctx)
-			log.Info("closing provider", "nsn", key.Name)
-		}
-		log.Info("closing provider nil", "nsn", key.Name)
-	})
 	return nil
 }

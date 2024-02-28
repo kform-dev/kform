@@ -56,7 +56,7 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("cannot json marshal config", "error", err.Error())
 		return err
 	}
-	log.Info("providerConfig", "config", string(providerConfigByte))
+	log.Debug("providerConfig", "config", string(providerConfigByte))
 	// initialize the provider
 	p, err := r.providers.Get(ctx, store.ToKey(vctx.BlockName))
 	if err != nil {
@@ -82,6 +82,6 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("failed to configure provider", "error", cfgResp.Diagnostics)
 		return fmt.Errorf("provider %s not found in inventory err: %s", vctx.BlockName, cfgResp.Diagnostics)
 	}
-	log.Info("run block instance finished...")
+	log.Debug("run block instance finished...")
 	return nil
 }

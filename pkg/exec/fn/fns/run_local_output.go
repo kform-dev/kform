@@ -28,7 +28,7 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 	// ForEach: each.key/value
 	// Count: count.index
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
-	log.Info("run block instance start...")
+	log.Debug("run block instance start...")
 	// if the BlockContext Value is defined we render the expected output
 	// the syntax parser should validate this, meaning the value should always be defined
 	renderer := celrender.New(r.dataStore, localVars)
@@ -44,6 +44,6 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}
 
-	log.Info("run block instance finished...")
+	log.Debug("run block instance finished...")
 	return nil
 }

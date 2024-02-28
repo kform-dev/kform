@@ -37,7 +37,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	// ForEach: each.key/value
 	// Count: count.index
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
-	log.Info("run block instance start...")
+	log.Debug("run block instance start...")
 
 	renderer := celrender.New(r.dataStore, localVars)
 	inputData, err := types.DeepCopy(vctx.Data.Data[data.DummyKey][0])
@@ -55,7 +55,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("cannot json marshal list", "error", err.Error())
 		return err
 	}
-	log.Info("data", "json req", string(b))
+	log.Debug("data", "json req", string(b))
 
 	// 2. run provider
 	// lookup the provider in the provider instances
@@ -70,7 +70,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	switch vctx.BlockType {
 	case kformv1alpha1.BlockTYPE_DATA:
 		resp, err := provider.ReadDataSource(ctx, &kfplugin1.ReadDataSource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[0],
+			Name: strings.Split(vctx.BlockName, ".")[1],
 			Data: b,
 		})
 		if err != nil {
@@ -79,12 +79,12 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		}
 		if diag.Diagnostics(resp.Diagnostics).HasError() {
 			log.Error("request failed", "error", diag.Diagnostics(resp.Diagnostics).Error())
-			return err
+			return diag.Diagnostics(resp.Diagnostics).Error()
 		}
 		b = resp.Data
 	case kformv1alpha1.BlockTYPE_RESOURCE:
 		resp, err := provider.CreateResource(ctx, &kfplugin1.CreateResource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[0],
+			Name: strings.Split(vctx.BlockName, ".")[1],
 			Data: b,
 		})
 		if err != nil {
@@ -93,13 +93,13 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		}
 		if diag.Diagnostics(resp.Diagnostics).HasError() {
 			log.Error("request failed", "error", diag.Diagnostics(resp.Diagnostics).Error())
-			return err
+			return diag.Diagnostics(resp.Diagnostics).Error()
 		}
 		b = resp.Data
 	case kformv1alpha1.BlockTYPE_LIST:
 		// TBD how do we deal with a list
 		resp, err := provider.ListDataSource(ctx, &kfplugin1.ListDataSource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[0],
+			Name: strings.Split(vctx.BlockName, ".")[1],
 			Data: b,
 		})
 		if err != nil {
@@ -108,7 +108,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		}
 		if diag.Diagnostics(resp.Diagnostics).HasError() {
 			log.Error("request failed", "error", diag.Diagnostics(resp.Diagnostics).Error())
-			return err
+			return diag.Diagnostics(resp.Diagnostics).Error()
 		}
 		b = resp.Data
 	default:
@@ -119,12 +119,12 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("cannot unmarshal resp", "error", err.Error())
 		return err
 	}
-	log.Info("data response", "resp", string(b))
+	log.Debug("data response", "resp", string(b))
 
 	if err := r.dataStore.UpdateData(ctx, vctx.BlockName, value, localVars); err != nil {
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}
 
-	log.Info("run block instance finished...")
+	log.Debug("run block instance finished...")
 	return nil
 }

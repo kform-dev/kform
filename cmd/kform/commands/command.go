@@ -21,6 +21,7 @@ const (
 
 var (
 	configFile string
+	debug      bool
 )
 
 func GetMain(ctx context.Context) *cobra.Command {
@@ -53,9 +54,10 @@ func GetMain(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	cmd.AddCommand(applycmd.NewCommand(ctx, version))
-	cmd.PersistentFlags().StringVar(&configFile, "config", "c", fmt.Sprintf("Default config file (%s/%s/%s.%s)", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt))
-
+	defaultConfigFile := fmt.Sprintf("%s/%s/%s.%s", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt)
+	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", defaultConfigFile, "config file to store config information for kform")
+	cmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
+	cmd.AddCommand(applycmd.NewCommand(ctx, version, debug))
 	return cmd
 }
 

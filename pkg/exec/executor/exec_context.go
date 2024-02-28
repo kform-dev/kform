@@ -119,7 +119,7 @@ func (r *execContext[T]) run(ctx context.Context) {
 	for k := range doneChs {
 		downVertices = append(downVertices, k)
 	}
-	log.Debug("block run finished", "downVertices", downVertices)
+	log.Debug("block run finished", "downVertices", downVertices, "success", success)
 	// signal to the dependent function the result of the vertex fn execution
 	for vertexName, doneCh := range doneChs {
 		doneCh <- success
