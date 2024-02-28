@@ -24,7 +24,7 @@ type Block interface {
 	GetSource() string
 	GetProvider() string
 	GetInputParameters() map[string]any
-	GetProviders() map[string]string
+	GetProviders() map[string]string // only relevant for mixin
 	// Dependencies
 	GetDependencies() sets.Set[string]
 	GetPkgDependencies() sets.Set[string]

@@ -82,7 +82,5 @@ func GetKforms(ctx context.Context, path string, input bool) (*kformv1alpha1.Kfo
 			log.Debug("read kubeObject", "fileName", key.Name, "kind", ko.GetKind(), "name", ko.GetName())
 		}
 	})
-	fmt.Println("kubeObject parsing succeeded,")
-
 	return kfile, kforms, nil
 }

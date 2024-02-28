@@ -22,8 +22,8 @@ type VertexContext struct {
 	Attributes      *kformv1alpha1.Attributes
 	Dependencies    sets.Set[string]
 	PkgDependencies sets.Set[string]
-	// only relevant for blocktype resource and data
-	Provider string
+	// only relevant for blocktype resource, data and list
+	//Provider string
 	// only relevant for blocktype package/mixin
 	// can be either a regular DAG or a provider DAG
 	DAG dag.DAG[*VertexContext]

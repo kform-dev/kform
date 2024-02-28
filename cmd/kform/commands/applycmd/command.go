@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/henderiw-nephio/kform/kform-plugin/plugin"
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
@@ -159,7 +160,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx = context.WithValue(ctx, types.CtxKeyRecorder, kformRecorder)
 
 	// syntax check config -> build the dag
-	log.Info("parsing packages")
+	log.Debug("parsing packages")
 	p, err := parser.NewKformParser(ctx, r.rootPath)
 	if err != nil {
 		return err
@@ -172,67 +173,60 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	}
 	kformRecorder.Print()
 
-	/*
-		providerInventory, err := p.InitProviderInventory(ctx)
-		if err != nil {
-			log.Error("failed initializing provider inventory", "error", err)
-			return err
-		}
-
-		providerInstances := p.InitProviderInstances(ctx)
-	*/
-
-	/*
-		for nsn := range providerInstances.List() {
-			fmt.Println("provider instance", nsn.Name)
-		}
-	*/
+	// initialize providers which hold the identities of the raw providers
+	// that reference the exec/initialization to startup the binaries
+	providers, err := p.InitProviders(ctx)
+	if err != nil {
+		log.Error("failed initializing providers", "error", err)
+		return err
+	}
+	// Based on the used provider configs return the providerInstances
+	// this is an empty list which will be initialized during the run
+	providerInstances, err := p.GetEmptyProviderInstances(ctx)
+	if err != nil {
+		log.Error("failed initializing provider Instances", "error", err)
+		return err
+	}
+	//providerInstances.List(ctx, func(ctx context.Context, key store.Key, block types.Block) {
+	//	fmt.Println("provider instance", key.Name)
+	//})
 
 	rootPackage, err := p.GetRootPackage(ctx)
 	if err != nil {
 		return err
 	}
 	//rootPackage.DAG.Print("root")
-	//rootPackage.ProviderDAG.Print("root")
+	//rootPackage.ProviderDAG.Print("provider root")
 
-	/*
-		for blockName, block := range types.ListBlocks(ctx, rootPackage.Blocks) {
-			fmt.Println("blockData", blockName, block.GetData())
-		}
-	*/
+	// initialize the recorder
+	runRecorder := recorder.New[diag.Diagnostic]()
+	dataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
 
-	/*
-		runRecorder := recorder.New[diag.Diagnostic]()
-		resultStore :=
+	// run the provider DAG
+	log.Info("create provider runner")
+	rmfn := fns.NewPackageFn(&fns.Config{
+		Provider:          true,
+		RootPackageName:   rootPackage.Name,
+		DataStore:         dataStore,
+		Recorder:          runRecorder,
+		ProviderInstances: providerInstances,
+		Providers:         providers,
+	})
+	log.Info("executing provider runner DAG")
+	if err := rmfn.Run(ctx, &types.VertexContext{
+		FileName:    filepath.Join(r.rootPath, pkgio.PkgFileMatch[0]),
+		PackageName: rootPackage.Name,
+		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
+		BlockName:   rootPackage.Name,
+		DAG:         rootPackage.ProviderDAG, // we supply the provider DAG here
+	}, inputVars); err != nil {
+		log.Error("failed running provider DAG", "err", err)
+		return err
+	}
+	log.Info("success executing provider DAG")
 
-			// run the provider DAG
-		log.Info("create provider runner")
-
-		rmfn := fns.NewPackageFn(&fns.Config{
-			Provider:          true,
-			RootModuleName:    rm.NSN.Name,
-			Vars:              varsCache,
-			Recorder:          runrecorder,
-			ProviderInstances: providerInstances,
-			ProviderInventory: providerInventory,
-		})
-		log.Info("executing provider runner DAG")
-		if err := rmfn.Run(ctx, &types.VertexContext{
-			FileName:     filepath.Join(r.rootPath, pkgio.PkgFileMatch[0]),
-			ModuleName:   rm.NSN.Name,
-			BlockType:    types.BlockTypeModule,
-			BlockName:    rm.NSN.Name,
-			DAG:          rm.ProviderDAG, // we supply the provider DAG here
-			BlockContext: types.KformBlockContext{},
-		}, map[string]any{}); err != nil {
-			log.Error("failed running provider DAG", "err", err)
-			return err
-		}
-		log.Info("success executing provider DAG")
-
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-	*/
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	// doneCh := make(chan struct{})
 	errCh := make(chan error, 1)
@@ -244,14 +238,11 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		dataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
 
 		cmdPackageFn := fns.NewPackageFn(&fns.Config{
-			RootPackageName: rootPackage.Name,
-			DataStore:       dataStore,
-			Recorder:        runRecorder,
-			/*
-				TODO update when adding providers
-				ProviderInstances: providerInstances,
-				ProviderInventory: providerInventory,
-			*/
+			RootPackageName:   rootPackage.Name,
+			DataStore:         dataStore,
+			Recorder:          runRecorder,
+			ProviderInstances: providerInstances,
+			Providers:         providers,
 		})
 
 		log.Info("executing package")
@@ -394,7 +385,6 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		}
 
 		//runRecorder.Print()
-		// auto-apply -> depends on the flag if we approve the change or not.
 	}()
 
 	err = <-errCh
@@ -402,17 +392,12 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		log.Error("exec failed", "err", err)
 	}
 
-	/*
-		providersList := providerInstances.List()
-		fmt.Println("exec Done", len(providersList))
-		for nsn, provider := range providersList {
-			if provider != nil {
-				provider.Close(ctx)
-				log.Info("closing provider", "nsn", nsn)
-				continue
-			}
-			log.Info("closing provider nil", "nsn", nsn)
+	providerInstances.List(ctx, func(ctx context.Context, key store.Key, provider plugin.Provider) {
+		if provider != nil {
+			provider.Close(ctx)
+			log.Info("closing provider", "nsn", key.Name)
 		}
-	*/
+		log.Info("closing provider nil", "nsn", key.Name)
+	})
 	return nil
 }

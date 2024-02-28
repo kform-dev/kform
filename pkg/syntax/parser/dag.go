@@ -6,9 +6,10 @@ import (
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-func (r *KformParser) generateProviderDAG(ctx context.Context, unrefed []string) {
+func (r *KformParser) generateProviderDAG(ctx context.Context, usedProviderConfigs sets.Set[string]) {
 	log := log.FromContext(ctx)
 	log.Debug("generating provider DAG")
 	rootPackage, err := r.GetRootPackage(ctx)
@@ -16,7 +17,7 @@ func (r *KformParser) generateProviderDAG(ctx context.Context, unrefed []string)
 		r.recorder.Record(diag.DiagFromErr(err))
 		return
 	}
-	rootPackage.GenerateDAG(ctx, true, unrefed)
+	rootPackage.GenerateDAG(ctx, true, usedProviderConfigs)
 	// update the module with the DAG in the cache
 	r.packages.Update(ctx, store.ToKey(r.rootPackageName), rootPackage)
 }
@@ -25,8 +26,8 @@ func (r *KformParser) generateDAG(ctx context.Context) {
 	log := log.FromContext(ctx)
 	log.Debug("generating DAG")
 	for packageName, pkg := range r.ListPackages(ctx) {
-		// generate a regular DAG
-		pkg.GenerateDAG(ctx, false, []string{})
+		// generate a regular DAG, for a regular dag the provider configs don't matter
+		pkg.GenerateDAG(ctx, false, nil)
 		// update the module with the DAG in the cache
 		r.packages.Update(ctx, store.ToKey(packageName), pkg)
 	}

@@ -40,7 +40,6 @@ type KformParser struct {
 	rootPackageName string
 	recorder        recorder.Recorder[diag.Diagnostic]
 	packages        store.Storer[*types.Package]
-	//providers      store.Storer[*address.Package]
 }
 
 func (r *KformParser) Parse(ctx context.Context) {
@@ -64,7 +63,12 @@ func (r *KformParser) Parse(ctx context.Context) {
 		return
 	}
 
-	r.generateProviderDAG(ctx, r.getUnReferencedProviderConfigs(ctx))
+	_, usedProviderConfigs, err := r.GetProviderConfigs(ctx)
+	if err != nil {
+		r.recorder.Record(diag.DiagFromErr(err))
+		return
+	}
+	r.generateProviderDAG(ctx, usedProviderConfigs)
 	r.generateDAG(ctx)
 }
 

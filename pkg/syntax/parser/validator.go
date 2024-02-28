@@ -15,7 +15,6 @@ import (
 // validateProviderConfigs validates if for each provider in a child resource
 // there is a provider config
 func (r *KformParser) validateProviderConfigs(ctx context.Context) {
-
 	rootPackage, err := r.GetRootPackage(ctx)
 	if err != nil {
 		r.recorder.Record(diag.DiagFromErr(err))
@@ -24,7 +23,7 @@ func (r *KformParser) validateProviderConfigs(ctx context.Context) {
 
 	for packageName, pkg := range r.ListPackages(ctx) {
 		if pkg.Kind != types.PackageKind_MIXIN {
-			for _, provider := range pkg.ListProviderResources(ctx).UnsortedList() {
+			for _, provider := range pkg.ListProvidersFromResources(ctx).UnsortedList() {
 				if _, ok := rootProviderConfigs[provider]; !ok {
 					r.recorder.Record(diag.DiagErrorf("no provider config in root module for child module %s, provider: %s", packageName, provider))
 				}
@@ -54,7 +53,7 @@ func (r *KformParser) validateMixins(ctx context.Context) {
 				if _, err := pkg.ProviderConfigs.Get(ctx, store.ToKey(sourceProvider)); err != nil {
 					r.recorder.Record(diag.DiagErrorf("provider package mixin from %s to %s source provider %s not found", packageName, mixinPackageName, sourceProvider))
 				}
-				if !mixinPkg.ListProviderResources(ctx).Has(targetProvider) {
+				if !mixinPkg.ListProvidersFromResources(ctx).Has(targetProvider) {
 					r.recorder.Record(diag.DiagErrorf("provider package mixin from %s to %s target provider %s not found", packageName, mixinPackageName, targetProvider))
 				}
 			}
@@ -97,7 +96,7 @@ func (r *KformParser) getUnReferencedProviderConfigs(ctx context.Context) []stri
 	}
 	rootProviderConfigs := rootPackage.ListProviderConfigs(ctx)
 	for _, pkg := range r.ListPackages(ctx) {
-		for _, provider := range pkg.ListProviderResources(ctx).UnsortedList() {
+		for _, provider := range pkg.ListProvidersFromResources(ctx).UnsortedList() {
 			delete(rootProviderConfigs, provider)
 			if len(rootProviderConfigs) == 0 {
 				return unreferenceProviderConfigs

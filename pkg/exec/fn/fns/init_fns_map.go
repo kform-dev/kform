@@ -32,8 +32,9 @@ type Config struct {
 	Recorder        recorder.Recorder[diag.Diagnostic]
 	// used for the provider DAG run + resources run to find the provider client
 	ProviderInstances store.Storer[plugin.Provider]
+	// hold the raw provider reference to the provider
 	// used for the provider DAG run only
-	ProviderInventory store.Storer[types.Provider]
+	Providers store.Storer[types.Provider]
 }
 
 func NewMap(ctx context.Context, cfg *Config) Map {
@@ -43,14 +44,15 @@ func NewMap(ctx context.Context, cfg *Config) Map {
 	return &fnMap{
 		cfg: *cfg,
 		fns: map[kformv1alpha1.BlockType]Initializer{
-			kformv1alpha1.BlockTYPE_PACKAGE: NewPackageFn,
-			kformv1alpha1.BlockTYPE_INPUT:   NewInputFn,
-			kformv1alpha1.BlockTYPE_OUTPUT:  NewLocalOrOutputFn,
-			kformv1alpha1.BlockTYPE_LOCAL:   NewLocalOrOutputFn,
-			//kformv1alpha1.BlockTYPE_RESOURCE: NewResourceFn,
-			//kformv1alpha1.BlockTYPE_DATA:     NewResourceFn,
-			kformv1alpha1.BlockTYPE_ROOT: NewRootFn,
-			//kformv1alpha1.BlockTYPE_PROVIDER: NewProviderFn,
+			kformv1alpha1.BlockTYPE_PACKAGE:  NewPackageFn,
+			kformv1alpha1.BlockTYPE_INPUT:    NewInputFn,
+			kformv1alpha1.BlockTYPE_OUTPUT:   NewLocalOrOutputFn,
+			kformv1alpha1.BlockTYPE_LOCAL:    NewLocalOrOutputFn,
+			kformv1alpha1.BlockTYPE_RESOURCE: NewResourceFn, // we handle this in the same fn
+			kformv1alpha1.BlockTYPE_DATA:     NewResourceFn, // we handle this in the same fn
+			kformv1alpha1.BlockTYPE_LIST:     NewResourceFn, // we handle this in the same fn
+			kformv1alpha1.BlockTYPE_ROOT:     NewRootFn,
+			kformv1alpha1.BlockTYPE_PROVIDER: NewProviderFn,
 		},
 	}
 }

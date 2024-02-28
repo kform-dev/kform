@@ -22,24 +22,21 @@ import (
 
 func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 	return &pkg{
-		provider:          cfg.Provider,
 		rootPackageName:   cfg.RootPackageName,
 		dataStore:         cfg.DataStore,
 		recorder:          cfg.Recorder,
-		providerInventory: cfg.ProviderInventory,
+		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
 	}
 }
 
 type pkg struct {
-	// inidctaes which dag to pick for the run (provider dag or regular dag)
-	provider bool
 	// initialized from the vertexContext
 	rootPackageName string
 	// dynamic injection required
 	dataStore         *data.DataStore
 	recorder          recorder.Recorder[diag.Diagnostic]
-	providerInventory store.Storer[types.Provider]
+	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
 }
 
@@ -58,7 +55,7 @@ Per execution instance (single or range (count/for_each))
 */
 
 func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
-	log := log.FromContext(ctx).With("vertexContext", vctx.String(), "provider", r.provider)
+	log := log.FromContext(ctx).With("vertexContext", vctx.String())
 	log.Debug("run instance")
 	// render the new vars input
 	newDataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
@@ -88,7 +85,7 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			DataStore:         newDataStore,
 			Recorder:          r.recorder,
 			ProviderInstances: r.providerInstances,
-			ProviderInventory: r.providerInventory,
+			Providers:         r.providers,
 		}),
 	})
 	if err != nil {

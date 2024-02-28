@@ -33,7 +33,7 @@ func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
 			DataStore:         cfg.DataStore,
 			Recorder:          cfg.Recorder,
 			ProviderInstances: cfg.ProviderInstances,
-			ProviderInventory: cfg.ProviderInventory,
+			Providers:         cfg.Providers,
 		}),
 	}
 }

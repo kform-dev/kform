@@ -134,11 +134,11 @@ func (r *Package) resolveDependencies(ctx context.Context, name string, b Block)
 }
 
 func (r *Package) ResolveResource2ProviderConfig(ctx context.Context) {
+	// list resources/data/etc
 	for name, b := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
 		kformv1alpha1.BlockTYPE_INPUT.String(),
 		kformv1alpha1.BlockTYPE_OUTPUT.String(),
 		kformv1alpha1.BlockTYPE_LOCAL.String(),
-		kformv1alpha1.BlockTYPE_PACKAGE.String(),
 		kformv1alpha1.BlockTYPE_PACKAGE.String(),
 	}}) {
 		provider := b.GetProvider()
@@ -202,16 +202,34 @@ func (r *Package) ListProviderConfigs(ctx context.Context) map[string]Block {
 	return providerConfigs
 }
 
-func (r *Package) ListProviderResources(ctx context.Context) sets.Set[string] {
+// ListProvidersFromResources lists all providers resource identified
+// this includes direct provider mappings as well as aliases
+func (r *Package) ListProvidersFromResources(ctx context.Context) sets.Set[string] {
 	providers := sets.New[string]()
 	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
 		kformv1alpha1.BlockTYPE_INPUT.String(),
 		kformv1alpha1.BlockTYPE_OUTPUT.String(),
 		kformv1alpha1.BlockTYPE_LOCAL.String(),
 		kformv1alpha1.BlockTYPE_PACKAGE.String(),
-		kformv1alpha1.BlockTYPE_PACKAGE.String(),
+		kformv1alpha1.BlockTYPE_PROVIDER.String(),
 	}}) {
 		providers.Insert(block.GetProvider())
+	}
+	return providers
+}
+
+// ListRawProvidersFromResources lists all providers resource identified
+// this includes only the main providers, no aliases
+func (r *Package) ListRawProvidersFromResources(ctx context.Context) sets.Set[string] {
+	providers := sets.New[string]()
+	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
+		kformv1alpha1.BlockTYPE_INPUT.String(),
+		kformv1alpha1.BlockTYPE_OUTPUT.String(),
+		kformv1alpha1.BlockTYPE_LOCAL.String(),
+		kformv1alpha1.BlockTYPE_PACKAGE.String(),
+		kformv1alpha1.BlockTYPE_PROVIDER.String(),
+	}}) {
+		providers.Insert(strings.Split(block.GetProvider(), "_")[0])
 	}
 	return providers
 }
@@ -224,9 +242,9 @@ func (r *Package) ListProviderRequirements(ctx context.Context) map[string]kform
 	return providerRequirements
 }
 
-func (r *Package) GenerateDAG(ctx context.Context, provider bool, unrefed []string) error {
+func (r *Package) GenerateDAG(ctx context.Context, provider bool, usedProviderConfigs sets.Set[string]) error {
 	// add the vertices with the right VertexContext to the dag
-	d, err := r.generateDAG(ctx, provider, unrefed)
+	d, err := r.generateDAG(ctx, provider, usedProviderConfigs)
 	if err != nil {
 		return err
 	}
@@ -252,7 +270,7 @@ func (r *Package) GenerateDAG(ctx context.Context, provider bool, unrefed []stri
 	}
 	return nil
 }
-func (r *Package) generateDAG(ctx context.Context, provider bool, unrefed []string) (dag.DAG[*VertexContext], error) {
+func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderConfigs sets.Set[string]) (dag.DAG[*VertexContext], error) {
 	d := dag.New[*VertexContext]()
 
 	d.AddVertex(ctx, dag.Root, &VertexContext{
@@ -269,18 +287,10 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, unrefed []stri
 			if err := addVertex(ctx, d, blockName, block); err != nil {
 				return nil, err
 			}
-
 		}
 		for providerName, block := range r.ListProviderConfigs(ctx) {
-			// unreferenced provider configs should not be added to the dag
-			found := false
-			for _, name := range unrefed {
-				if name == providerName {
-					found = true
-					break
-				}
-			}
-			if !found {
+			// only add provider configs that are used to the dag
+			if usedProviderConfigs.Has(providerName) {
 				if err := addVertex(ctx, d, providerName, block); err != nil {
 					return nil, err
 				}

@@ -26,13 +26,13 @@ type input struct {
 func (r *input) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
 	// NOTE: No forEach or count expected
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
-	log.Debug("run block instance start...")
+	log.Info("run block instance start...")
 	// Dynamic input will already be initializes, so we first check if the blockName exists
 	// if not we initialize the block with the default block if it exists
 	if _, err := r.dataStore.Get(ctx, store.ToKey(vctx.BlockName)); err != nil {
 		r.dataStore.Create(ctx, store.ToKey(vctx.BlockName), vctx.Data)
 		log.Debug("input", "value", vctx.Data)
 	}
-	log.Debug("run block instance finished...")
+	log.Info("run block instance finished...")
 	return nil
 }

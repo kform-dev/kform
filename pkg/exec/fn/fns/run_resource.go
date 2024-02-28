@@ -37,30 +37,33 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	// ForEach: each.key/value
 	// Count: count.index
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
-	log.Debug("run block instance start...")
+	log.Info("run block instance start...")
 
 	renderer := celrender.New(r.dataStore, localVars)
-	// TODO check the data
-	value, err := renderer.Render(ctx, vctx.Data.Data[data.DummyKey][0])
+	inputData, err := types.DeepCopy(vctx.Data.Data[data.DummyKey][0])
+	if err != nil {
+		return err
+	}
+	value, err := renderer.Render(ctx, inputData)
 	if err != nil {
 		return fmt.Errorf("cannot render config for %s", vctx.String())
 	}
-	log.Debug("data raw", "req", value)
+	log.Debug("data", "raw req", value)
 
 	b, err := json.Marshal(value)
 	if err != nil {
 		log.Error("cannot json marshal list", "error", err.Error())
 		return err
 	}
-	log.Debug("data json", "req", string(b))
+	log.Info("data", "json req", string(b))
 
 	// 2. run provider
 	// lookup the provider in the provider instances
 	// based on the blockType run either data or resource
 	// add the data in the variable
-	provider, err := r.providerInstances.Get(ctx, store.ToKey(vctx.Provider))
+	provider, err := r.providerInstances.Get(ctx, store.ToKey(vctx.Attributes.Provider))
 	if err != nil {
-		log.Debug("cannot get provider", "error", err.Error())
+		log.Error("cannot get provider", "provider", vctx.Attributes.Provider, "error", err.Error())
 		return err
 	}
 
@@ -116,12 +119,12 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("cannot unmarshal resp", "error", err.Error())
 		return err
 	}
-	log.Debug("data response", "resp", string(b))
+	log.Info("data response", "resp", string(b))
 
 	if err := r.dataStore.UpdateData(ctx, vctx.BlockName, value, localVars); err != nil {
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}
 
-	log.Debug("run block instance finished...")
+	log.Info("run block instance finished...")
 	return nil
 }
