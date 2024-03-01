@@ -25,7 +25,7 @@ type Initializer func() (kfplugin.Provider, error)
 
 func (r *Provider) Init(ctx context.Context, execpath, providerName string) error {
 	log := log.FromContext(ctx)
-	log.Info("init provider", "execpath", execpath)
+	log.Debug("init provider", "execpath", execpath)
 	r.Name = providerName
 	r.Initializer = ProviderInitializer(execpath)
 	r.Resources = sets.New[string]()
@@ -45,15 +45,15 @@ func (r *Provider) Init(ctx context.Context, execpath, providerName string) erro
 	}
 
 	if len(capResp.Resources) > 0 {
-		log.Info("resources", "name", providerName, "resources", capResp.Resources)
+		log.Debug("resources", "name", providerName, "resources", capResp.Resources)
 		r.Resources.Insert(capResp.Resources...)
 	}
 	if len(capResp.ReadDataSources) > 0 {
-		log.Info("read data sources", "name", providerName, "resources", capResp.ReadDataSources)
+		log.Debug("read data sources", "name", providerName, "resources", capResp.ReadDataSources)
 		r.ReadDataSources.Insert(capResp.ReadDataSources...)
 	}
 	if len(capResp.ListDataSources) > 0 {
-		log.Info("list data sources", "name", providerName, "resources", capResp.ListDataSources)
+		log.Debug("list data sources", "name", providerName, "resources", capResp.ListDataSources)
 		r.ListDataSources.Insert(capResp.ListDataSources...)
 	}
 	return nil

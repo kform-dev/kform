@@ -3,10 +3,12 @@ package commands
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/adrg/xdg"
 	"github.com/kform-dev/kform/cmd/kform/commands/applycmd"
+	"github.com/kform-dev/kform/cmd/kform/globals"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -35,6 +37,9 @@ func GetMain(ctx context.Context) *cobra.Command {
 		// adjust the error message coming from libraries
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if debug {
+				globals.LogLevel.Set(slog.LevelDebug)
+			}
 			// initialize viper
 			// ensure the viper config directory exists
 			cobra.CheckErr(fsys.EnsureDir(ctx, xdg.ConfigHome, defaultConfigFileSubDir))
@@ -57,7 +62,7 @@ func GetMain(ctx context.Context) *cobra.Command {
 	defaultConfigFile := fmt.Sprintf("%s/%s/%s.%s", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt)
 	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", defaultConfigFile, "config file to store config information for kform")
 	cmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
-	cmd.AddCommand(applycmd.NewCommand(ctx, version, debug))
+	cmd.AddCommand(applycmd.NewCommand(ctx, version))
 	return cmd
 }
 

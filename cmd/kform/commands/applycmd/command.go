@@ -3,7 +3,6 @@ package applycmd
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"os"
 	"path"
 	"path/filepath"
@@ -23,7 +22,6 @@ import (
 
 	//docs "github.com/kform-dev/kform/internal/docs/generated/applydocs"
 	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
-	"github.com/kform-dev/kform/cmd/kform/globals"
 	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
@@ -34,10 +32,8 @@ import (
 )
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string, debug bool) *Runner {
-	r := &Runner{
-		debug: debug,
-	}
+func NewRunner(ctx context.Context, version string) *Runner {
+	r := &Runner{}
 	cmd := &cobra.Command{
 		Use:  "apply [flags]",
 		Args: cobra.ExactArgs(1),
@@ -56,8 +52,8 @@ func NewRunner(ctx context.Context, version string, debug bool) *Runner {
 	return r
 }
 
-func NewCommand(ctx context.Context, version string, debug bool) *cobra.Command {
-	return NewRunner(ctx, version, debug).Command
+func NewCommand(ctx context.Context, version string) *cobra.Command {
+	return NewRunner(ctx, version).Command
 }
 
 type Runner struct {
@@ -66,14 +62,11 @@ type Runner struct {
 	AutoApprove bool
 	Input       string
 	Output      string
-	debug       bool
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx := c.Context()
 	log := log.FromContext(ctx)
-
-	globals.LogLevel.Set(slog.LevelDebug)
 
 	r.rootPath = args[0]
 	// check if the root path exists
@@ -210,7 +203,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	dataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
 
 	// run the provider DAG
-	log.Info("create provider runner")
+	log.Debug("create provider runner")
 	rmfn := fns.NewPackageFn(&fns.Config{
 		Provider:          true,
 		RootPackageName:   rootPackage.Name,
@@ -219,7 +212,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		ProviderInstances: providerInstances,
 		Providers:         providers,
 	})
-	log.Info("executing provider runner DAG")
+	log.Debug("executing provider runner DAG")
 	if err := rmfn.Run(ctx, &types.VertexContext{
 		FileName:    filepath.Join(r.rootPath, pkgio.PkgFileMatch[0]),
 		PackageName: rootPackage.Name,
@@ -230,15 +223,15 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		log.Error("failed running provider DAG", "err", err)
 		return err
 	}
-	log.Info("success executing provider DAG")
+	log.Debug("success executing provider DAG")
 
 	defer func() {
 		providerInstances.List(ctx, func(ctx context.Context, key store.Key, provider plugin.Provider) {
 			if provider != nil {
 				provider.Close(ctx)
-				log.Info("closing provider", "nsn", key.Name)
+				log.Debug("closing provider", "nsn", key.Name)
 			}
-			log.Info("closing provider nil", "nsn", key.Name)
+			log.Debug("closing provider nil", "nsn", key.Name)
 		})
 	}()
 
@@ -261,7 +254,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 			Providers:         providers,
 		})
 
-		log.Info("executing package")
+		log.Debug("executing package")
 		if err := cmdPackageFn.Run(ctx, &types.VertexContext{
 			FileName:    filepath.Join(r.rootPath, pkgio.PkgFileMatch[0]),
 			PackageName: rootPackage.Name,
