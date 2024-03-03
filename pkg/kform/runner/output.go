@@ -25,10 +25,14 @@ const (
 	OutputSink_File
 	OutputSink_Dir
 	OutputSink_StdOut
+	OutputSink_Memory
 )
 
 func (r *runner) getOuputSink(ctx context.Context) (OutputSink, error) {
 	output := OutputSink_StdOut
+	if r.cfg.OutputData != nil { // if memory outpur is specified it gets priority
+		return OutputSink_Memory, nil
+	}
 	if r.cfg.Output != "" {
 		//
 		fsi, err := os.Stat(r.cfg.Output)
@@ -116,6 +120,19 @@ func (r *runner) getResources(ctx context.Context, dataStore *data.DataStore) (m
 
 func (r *runner) outputResources(ctx context.Context, resources map[string]any) error {
 	switch r.outputSink {
+	case OutputSink_Memory:
+		var errm error
+		for resourceName, data := range resources {
+			b, err := yaml.Marshal(data)
+			if err != nil {
+				errors.Join(errm, err)
+				continue
+			}
+			r.cfg.OutputData.Create(ctx, store.ToKey(resourceName), b)
+		}
+		if errm != nil {
+			return errm
+		}
 	case OutputSink_Dir:
 		var errm error
 		for resourceName, data := range resources {

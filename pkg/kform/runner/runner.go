@@ -23,6 +23,7 @@ type Config struct {
 	Input        string // used for none, file or dir
 	InputData    store.Storer[[]byte]
 	Output       string
+	OutputData   store.Storer[[]byte]
 	ResourcePath string // path of the kform files
 	ResourceData store.Storer[[]byte]
 }
