@@ -33,7 +33,7 @@ func (r *runner) RunProviderDAG(ctx context.Context, rootPackage *types.Package,
 	})
 	log.Debug("executing provider runner DAG")
 	if err := rmfn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.cfg.Path, pkgio.PkgFileMatch[0]),
+		FileName:    filepath.Join(r.cfg.ResourcePath, pkgio.PkgFileMatch[0]),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,
@@ -62,7 +62,7 @@ func (r *runner) RunKformDAG(ctx context.Context, errCh chan error, rootPackage 
 
 	log.Debug("executing package")
 	if err := cmdPackageFn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.cfg.Path, pkgio.PkgFileMatch[0]),
+		FileName:    filepath.Join(r.cfg.ResourcePath, pkgio.PkgFileMatch[0]),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,

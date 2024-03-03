@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/kform-dev/kform/pkg/kform/runner"
 	"github.com/spf13/cobra"
@@ -58,9 +59,10 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	}
 
 	kfrunner := runner.NewKformRunner(&runner.Config{
-		Input:  r.Input,
-		Output: r.Output,
-		Path:   r.rootPath,
+		PackageName:  filepath.Base(r.rootPath),
+		Input:        r.Input,
+		Output:       r.Output,
+		ResourcePath: r.rootPath,
 	})
 
 	return kfrunner.Run(ctx)

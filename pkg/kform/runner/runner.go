@@ -19,10 +19,12 @@ type Runner interface {
 }
 
 type Config struct {
-	Input     string // used for none, file or dir
-	InputData store.Storer[[]byte]
-	Output    string
-	Path      string // path of the kform files
+	PackageName  string
+	Input        string // used for none, file or dir
+	InputData    store.Storer[[]byte]
+	Output       string
+	ResourcePath string // path of the kform files
+	ResourceData store.Storer[[]byte]
 }
 
 func NewKformRunner(cfg *Config) Runner {
@@ -56,7 +58,11 @@ func (r *runner) Run(ctx context.Context) error {
 
 	// syntax check config -> build the dag
 	log.Debug("parsing packages")
-	r.parser, err = parser.NewKformParser(ctx, r.cfg.Path)
+	r.parser, err = parser.NewKformParser(ctx, &parser.Config{
+		PackageName:  r.cfg.PackageName,
+		ResourcePath: r.cfg.ResourcePath,
+		ResourceData: r.cfg.ResourceData,
+	})
 	if err != nil {
 		return err
 	}
