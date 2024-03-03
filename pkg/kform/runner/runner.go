@@ -20,7 +20,7 @@ type Runner interface {
 
 type Config struct {
 	Input     string // used for none, file or dir
-	inputData store.Storer[[]byte]
+	InputData store.Storer[[]byte]
 	Output    string
 	Path      string // path of the kform files
 }

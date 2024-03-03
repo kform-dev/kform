@@ -24,8 +24,8 @@ func (r *runner) getInputVars(ctx context.Context) (map[string]any, error) {
 	var kf *kformv1alpha1.KformFile
 	var kforms map[string]*fn.KubeObject
 	var err error
-	if r.cfg.inputData != nil {
-		kf, kforms, err = loader.KformMemoryLoader(ctx, r.cfg.inputData, true)
+	if r.cfg.InputData != nil {
+		kf, kforms, err = loader.KformMemoryLoader(ctx, r.cfg.InputData, true)
 		if err != nil {
 			return inputVars, err
 		}
