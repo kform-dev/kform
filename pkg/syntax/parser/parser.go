@@ -86,7 +86,7 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName, path string
 	}
 
 	// this is seperated to make the input vars more flexible
-	kf, kforms, err := loader.GetKforms(ctx, path, false) // no special input processing requird
+	kf, kforms, err := loader.KformDirLoader(ctx, path, false) // no special input processing requird
 	if err != nil {
 		r.recorder.Record(diag.DiagFromErr(err))
 		return
