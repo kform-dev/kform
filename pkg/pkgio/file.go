@@ -70,7 +70,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 				}
 				// Replace the ending \r\n (line ending used in windows) with \n and then split it into multiple YAML documents
 				// if it contains document separators (---)
-				values, err := splitDocuments(strings.ReplaceAll(input.String(), "\r\n", "\n"))
+				values, err := SplitDocuments(strings.ReplaceAll(input.String(), "\r\n", "\n"))
 				if err != nil {
 					return
 				}
@@ -102,7 +102,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 // splitDocuments returns a slice of all documents contained in a YAML string. Multiple documents can be divided by the
 // YAML document separator (---). It allows for white space and comments to be after the separator on the same line,
 // but will return an error if anything else is on the line.
-func splitDocuments(s string) ([]string, error) {
+func SplitDocuments(s string) ([]string, error) {
 	docs := make([]string, 0)
 	if len(s) > 0 {
 		// The YAML document separator is any line that starts with ---
