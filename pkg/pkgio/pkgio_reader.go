@@ -25,6 +25,7 @@ import (
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/pkgio/ignore"
+	"github.com/henderiw/logger/log"
 )
 
 type PkgReader struct {
@@ -54,6 +55,8 @@ func (r *PkgReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 }
 
 func (r *PkgReader) getPaths(ctx context.Context) ([]string, error) {
+	log := log.FromContext(ctx)
+	log.Debug("getPatchs")
 	// collect the paths
 	paths := []string{}
 	if err := r.Fsys.Walk(".", func(path string, d fs.DirEntry, err error) error {
