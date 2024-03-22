@@ -1,5 +1,6 @@
 package loader
 
+/*
 import (
 	"context"
 	"fmt"
@@ -22,3 +23,4 @@ func KformMemoryLoader(ctx context.Context, data store.Storer[[]byte], input boo
 	l := &kformloader{recorder: recorder}
 	return l.load(ctx, data, input)
 }
+*/

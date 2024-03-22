@@ -1,3 +1,19 @@
+/*
+Copyright 2024 Nokia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package types
 
 import (
@@ -6,11 +22,12 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
+	"github.com/henderiw/logger/log"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 type blockValidator struct {
@@ -21,7 +38,7 @@ type blockValidator struct {
 var mandatory = true
 var optional = false
 
-func (r *blockValidator) validateAnnotations(ctx context.Context, ko *fn.KubeObject) {
+func (r *blockValidator) validateAnnotations(ctx context.Context, rn *yaml.RNode) {
 	// copy expected annotations in annotationsSets to validate the presence
 	annotationSets := sets.New[string]()
 	for key := range r.expectedAnnotations {
@@ -30,7 +47,7 @@ func (r *blockValidator) validateAnnotations(ctx context.Context, ko *fn.KubeObj
 
 	// delete the annotations that are present
 	// record warning for kform annotations that are present but ignored
-	for annotionKey := range ko.GetAnnotations() {
+	for annotionKey := range rn.GetAnnotations() {
 		if strings.HasPrefix(annotionKey, kformv1alpha1.KformAnnotationKeyPrefix) {
 			if !annotationSets.Has(annotionKey) {
 				r.recorder.Record(diag.DiagWarnfWithContext(Context{ctx}.String(), "annotation %s present, but ignored", annotionKey))
@@ -52,6 +69,8 @@ func (r *blockValidator) validateAnnotations(ctx context.Context, ko *fn.KubeObj
 // resource Type must starts with a letter
 // resource Type can container letters in lower and upper case, numbers and '-', '_'
 func validateResourceSyntax(ctx context.Context, name string) error {
+	log := log.FromContext(ctx)
+	log.Debug("validateResourceSyntax")
 	re := regexp.MustCompile(`^[a-zA-Z]+[a-zA-Z0-9_-]*$`)
 	if !re.Match([]byte(name)) {
 		return fmt.Errorf("syntax error a resourceType starts with a letter and can contain letters in lower and upper case, numbers and '-', '_', got: %s", name)

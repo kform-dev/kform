@@ -1,3 +1,19 @@
+/*
+Copyright 2024 Nokia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package parser
 
 import (
@@ -79,7 +95,7 @@ func (r *KformParser) InitProviders(ctx context.Context) (store.Storer[types.Pro
 		providerEnv := fmt.Sprintf("KFORM_PROVIDER_%s", strings.ToUpper(providerName))
 		providerExecPath, found := os.LookupEnv(providerEnv)
 		if !found {
-			return nil, fmt.Errorf("kform provider location has to be specified using end variable for now: %s", providerExecPath)
+			return nil, fmt.Errorf("kform provider location has to be specified using env variable for now: %s", providerExecPath)
 		}
 		provider := types.Provider{}
 		if err := provider.Init(ctx, providerExecPath, providerName); err != nil {

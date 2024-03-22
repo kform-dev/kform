@@ -23,6 +23,8 @@ const (
 	KformAnnotationKey_ORGANIZATION  = KformAnnotationKeyPrefix + "/" + "organization"
 	KformAnnotationKey_ALIAS         = KformAnnotationKeyPrefix + "/" + "alias"
 	KformAnnotationKey_HOSTNAME      = KformAnnotationKeyPrefix + "/" + "hostname"
+	KformAnnotationKey_PATH          = KformAnnotationKeyPrefix + "/" + "path"
+	KformAnnotationKey_INDEX         = KformAnnotationKeyPrefix + "/" + "index"
 )
 
 var KformAnnotations = []string{
@@ -46,4 +48,6 @@ var KformAnnotations = []string{
 	KformAnnotationKey_ORGANIZATION,
 	KformAnnotationKey_ALIAS,
 	KformAnnotationKey_HOSTNAME,
+	KformAnnotationKey_PATH,
+	KformAnnotationKey_INDEX,
 }

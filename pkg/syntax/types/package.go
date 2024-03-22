@@ -1,3 +1,19 @@
+/*
+Copyright 2024 Nokia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package types
 
 import (
@@ -11,10 +27,9 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/dag"
 	"github.com/kform-dev/kform/pkg/data"
-	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
-	"github.com/kform-dev/kform/pkg/render/deprender"
+	"github.com/kform-dev/kform/pkg/render2/deprenderer"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -51,7 +66,9 @@ type Package struct {
 
 func (r *Package) ListBlocks(ctx context.Context) []string {
 	blockNames := []string{}
-	for name := range ListBlocks(ctx, r.Blocks) {
+	for name := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+		ExludeOrphan: true,
+	}) {
 		blockNames = append(blockNames, name)
 	}
 	return blockNames
@@ -70,30 +87,32 @@ func DeepCopy(in any) (any, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal to output data")
 	}
-	//fmt.Printf("json copy output %v\n", out)
 	return out, nil
 }
 
 func (r *Package) AddDependencies(ctx context.Context) {
+	// excludes the orphan blocks since these resources are there to avoid
+	// kform from deleting them
 	blocks := r.ListBlocks(ctx)
-	for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{kformv1alpha1.BlockTYPE_INPUT.String()}}) {
-		deprenderer := deprender.New(blocks)
-
+	// input blocks and orphan blocks should not have dependencies
+	// so we can exclude them from finding dependencies
+	for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+		ExludeOrphan:  true,
+		PrefixExludes: []string{kformv1alpha1.BlockTYPE_INPUT.String()},
+	}) {
+		deprenderer := deprenderer.New(blocks)
 		// we do this to avoid copying the data
-		srcData, ok := block.GetData().Data[data.DummyKey]
-		if !ok {
-			r.recorder.Record(diag.DiagErrorf("block %s, does not have data for adding dependencies", blockName))
-			continue
-		}
-		dstData, err := DeepCopy(srcData)
-		if err != nil {
-			r.recorder.Record(diag.DiagErrorf("block %s, does not have data for adding dependencies", blockName))
-			continue
-		}
-		deprenderer.Render(ctx, dstData) // we need to avoid adding the Value here since the renderer adds nil values
+		for _, rn := range block.GetData().Get() {
+			// This also includes the annotations as we validate all
+			// the parameters in the object
+			if _, err := deprenderer.Render(ctx, rn.YNode()); err != nil {
+				r.recorder.Record(diag.DiagFromErr(err))
+			}
+			if err := deprenderer.ResolveDependsOn(ctx, rn); err != nil {
+				r.recorder.Record(diag.DiagFromErr(err))
+			}
 
-		// TODO: add dependencies for attributes
-
+		}
 		block.UpdateDependencies(deprenderer.GetDependencies(ctx))
 		block.UpdatePkgDependencies(deprenderer.GetPkgDependencies(ctx))
 		r.Blocks.Update(ctx, store.ToKey(blockName), block)
@@ -135,7 +154,7 @@ func (r *Package) resolveDependencies(ctx context.Context, name string, b Block)
 
 func (r *Package) ResolveResource2ProviderConfig(ctx context.Context) {
 	// list resources/data/etc
-	for name, b := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
+	for name, b := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrefixExludes: []string{
 		kformv1alpha1.BlockTYPE_INPUT.String(),
 		kformv1alpha1.BlockTYPE_OUTPUT.String(),
 		kformv1alpha1.BlockTYPE_LOCAL.String(),
@@ -161,30 +180,41 @@ func (r *Package) ValidateMixinProviderConfigs(ctx context.Context) {
 }
 
 type ListBlockOptions struct {
-	Prefix       string
-	PrexiExludes []string
+	Prefix        string
+	PrefixExludes []string
+	ExludeOrphan  bool
 }
 
 func ListBlocks(ctx context.Context, s store.Storer[Block], opts ...ListBlockOptions) map[string]Block {
 	blocks := map[string]Block{}
 	s.List(ctx, func(ctx context.Context, key store.Key, data Block) {
 		if opts != nil {
+			excluded := false
 			if opts[0].Prefix != "" {
-				if strings.HasPrefix(key.Name, opts[0].Prefix) {
-					blocks[key.Name] = data
+				if !strings.HasPrefix(key.Name, opts[0].Prefix) {
+					excluded = true
 				}
 			}
-			if len(opts[0].PrexiExludes) != 0 {
-				exluded := false
-				for _, excludedPrefix := range opts[0].PrexiExludes {
+			if len(opts[0].PrefixExludes) != 0 {
+				for _, excludedPrefix := range opts[0].PrefixExludes {
 					if strings.HasPrefix(key.Name, excludedPrefix) {
-						exluded = true
+						excluded = true
 						break
 					}
 				}
-				if !exluded {
-					blocks[key.Name] = data
+			}
+			if opts[0].ExludeOrphan {
+				if len(data.GetData().Get()) > 0 {
+					annotations := data.GetData().Get()[0].GetAnnotations()
+					if len(annotations) != 0 && annotations[kformv1alpha1.KformAnnotationKey_LIFECYCLE] != "" {
+						excluded = true
+					}
 				}
+			}
+			if !excluded {
+				// when the excludeOrphan is added we need to check for the lifecycle attribute
+				// and exclude the object from the list
+				blocks[key.Name] = data
 			}
 
 		} else {
@@ -206,13 +236,15 @@ func (r *Package) ListProviderConfigs(ctx context.Context) map[string]Block {
 // this includes direct provider mappings as well as aliases
 func (r *Package) ListProvidersFromResources(ctx context.Context) sets.Set[string] {
 	providers := sets.New[string]()
-	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
-		kformv1alpha1.BlockTYPE_INPUT.String(),
-		kformv1alpha1.BlockTYPE_OUTPUT.String(),
-		kformv1alpha1.BlockTYPE_LOCAL.String(),
-		kformv1alpha1.BlockTYPE_PACKAGE.String(),
-		kformv1alpha1.BlockTYPE_PROVIDER.String(),
-	}}) {
+	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+		ExludeOrphan: true,
+		PrefixExludes: []string{
+			kformv1alpha1.BlockTYPE_INPUT.String(),
+			kformv1alpha1.BlockTYPE_OUTPUT.String(),
+			kformv1alpha1.BlockTYPE_LOCAL.String(),
+			kformv1alpha1.BlockTYPE_PACKAGE.String(),
+			kformv1alpha1.BlockTYPE_PROVIDER.String(),
+		}}) {
 		providers.Insert(block.GetProvider())
 	}
 	return providers
@@ -222,13 +254,15 @@ func (r *Package) ListProvidersFromResources(ctx context.Context) sets.Set[strin
 // this includes only the main providers, no aliases
 func (r *Package) ListRawProvidersFromResources(ctx context.Context) sets.Set[string] {
 	providers := sets.New[string]()
-	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{PrexiExludes: []string{
-		kformv1alpha1.BlockTYPE_INPUT.String(),
-		kformv1alpha1.BlockTYPE_OUTPUT.String(),
-		kformv1alpha1.BlockTYPE_LOCAL.String(),
-		kformv1alpha1.BlockTYPE_PACKAGE.String(),
-		kformv1alpha1.BlockTYPE_PROVIDER.String(),
-	}}) {
+	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+		ExludeOrphan: true,
+		PrefixExludes: []string{
+			kformv1alpha1.BlockTYPE_INPUT.String(),
+			kformv1alpha1.BlockTYPE_OUTPUT.String(),
+			kformv1alpha1.BlockTYPE_LOCAL.String(),
+			kformv1alpha1.BlockTYPE_PACKAGE.String(),
+			kformv1alpha1.BlockTYPE_PROVIDER.String(),
+		}}) {
 		providers.Insert(strings.Split(block.GetProvider(), "_")[0])
 	}
 	return providers
@@ -274,7 +308,7 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderCo
 	d := dag.New[*VertexContext]()
 
 	d.AddVertex(ctx, dag.Root, &VertexContext{
-		FileName:    filepath.Join(r.SourceDir, pkgio.PkgFileMatch[0]),
+		FileName:    filepath.Join(r.SourceDir, "provider"),
 		PackageName: r.Name,
 		BlockName:   r.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_ROOT,
@@ -283,7 +317,8 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderCo
 	if provider {
 		// This is a providerDAG
 		// Add inputs as the provider config might be depdendent on them
-		for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{Prefix: kformv1alpha1.BlockTYPE_INPUT.String()}) {
+		for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+			Prefix: kformv1alpha1.BlockTYPE_INPUT.String()}) {
 			if err := addVertex(ctx, d, blockName, block); err != nil {
 				return nil, err
 			}
@@ -305,7 +340,7 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderCo
 		// - locals
 		// - modules
 		// - resources
-		for blockName, block := range ListBlocks(ctx, r.Blocks) {
+		for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{ExludeOrphan: true}) {
 			if err := addVertex(ctx, d, blockName, block); err != nil {
 				return nil, err
 			}
@@ -317,6 +352,7 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderCo
 func addVertex(ctx context.Context, d dag.DAG[*VertexContext], blockName string, block Block) error {
 	d.AddVertex(ctx, blockName, &VertexContext{
 		FileName:        block.GetFileName(),
+		Index:           block.GetIndex(),
 		PackageName:     block.GetPackageName(),
 		BlockName:       blockName,
 		BlockType:       block.GetBlockType(),
@@ -328,8 +364,8 @@ func addVertex(ctx context.Context, d dag.DAG[*VertexContext], blockName string,
 	return nil
 }
 
-func (r *Package) GetBlockdata(ctx context.Context) map[string]any {
-	blockData := map[string]any{}
+func (r *Package) GetBlockdata(ctx context.Context) map[string]data.BlockData {
+	blockData := map[string]data.BlockData{}
 	for blockName, block := range ListBlocks(ctx, r.Blocks) {
 		blockData[blockName] = block.GetData()
 	}

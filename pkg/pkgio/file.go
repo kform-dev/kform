@@ -19,9 +19,9 @@ package pkgio
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -29,12 +29,12 @@ import (
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 type filereader struct {
-	Checksum       bool
-	Fsys           fsys.FS
-	MatchFilesGlob []string
+	Checksum bool
+	Fsys     fsys.FS
 }
 
 func (r *filereader) readFileContent(ctx context.Context, paths []string) (store.Storer[[]byte], error) {
@@ -57,7 +57,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 				return
 			}
 
-			if isYamlMatch(r.MatchFilesGlob) {
+			if isYamlMatch(path) {
 				f, err := r.Fsys.Open(path)
 				if err != nil {
 					return
@@ -80,7 +80,11 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 					if i != len(values)-1 {
 						values[i] += "\n"
 					}
-					data.Create(ctx, store.ToKey(fmt.Sprintf("%s.%d", path, i)), []byte(values[i]))
+					data.Create(ctx, store.KeyFromNSN(
+						types.NamespacedName{
+							Namespace: strconv.Itoa(i),
+							Name:      path,
+						}), []byte(values[i]))
 				}
 			} else {
 				d, err = r.Fsys.ReadFile(path)

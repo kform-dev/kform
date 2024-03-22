@@ -28,7 +28,8 @@ type Config struct {
 	BlockName   string
 
 	RootPackageName string
-	DataStore       *data.DataStore
+	VarStore        store.Storer[data.VarData]
+	OutputStore     store.Storer[data.BlockData]
 	Recorder        recorder.Recorder[diag.Diagnostic]
 	// used for the provider DAG run + resources run to find the provider client
 	ProviderInstances store.Storer[plugin.Provider]

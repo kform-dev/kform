@@ -1,19 +1,35 @@
+/*
+Copyright 2024 Nokia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package parser
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/GoogleContainerTools/kpt-functions-sdk/go/fn"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
+	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
-	"github.com/kform-dev/kform/pkg/syntax/loader"
 	"github.com/kform-dev/kform/pkg/syntax/parser/pkgparser"
 	"github.com/kform-dev/kform/pkg/syntax/types"
 	"github.com/kform-dev/kform/pkg/util/cctx"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 type Config struct {
@@ -77,8 +93,8 @@ func (r *KformParser) Parse(ctx context.Context) {
 	r.generateDAG(ctx)
 }
 
-func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgType types.PackageKind, resourcePath string, resourceData store.Storer[[]byte]) {
-	ctx = context.WithValue(ctx, types.CtxKeyPackageName, r.cfg.PackageName)
+func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgType types.PackageKind, path string, data store.Storer[[]byte]) {
+	ctx = context.WithValue(ctx, types.CtxKeyPackageName, packageName)
 	//if r.rootPackagePath == path {
 	ctx = context.WithValue(ctx, types.CtxKeyPackageKind, pkgType)
 	//} else {
@@ -89,26 +105,49 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 		r.recorder.Record(diag.DiagFromErr(err))
 		return
 	}
-	var kf *kformv1alpha1.KformFile
-	var kforms map[string]*fn.KubeObject
-	if resourceData != nil {
-		// this is seperated to make the input vars more flexible
-		kf, kforms, err = loader.KformMemoryLoader(ctx, resourceData, false) // no special input processing required
+	//var kf *kformv1alpha1.KformFile
+	//var kforms map[string]*fn.KubeObject
+	var kformDataStore store.Storer[*yaml.RNode]
+	if data != nil {
+		var err error
+		reader := pkgio.KformMemReader{
+			Data: data,
+		}
+		kformDataStore, err = reader.Read(ctx)
 		if err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
 			return
 		}
+		/*
+			// this is seperated to make the input vars more flexible
+			kf, kforms, err = loader.KformMemoryLoader(ctx, resourceData, false) // no special input processing required
+			if err != nil {
+				r.recorder.Record(diag.DiagFromErr(err))
+				return
+			}
+		*/
 
 	} else {
+		var err error
 		// this is seperated to make the input vars more flexible
-		kf, kforms, err = loader.KformDirLoader(ctx, resourcePath, false) // no special input processing required
+		/*
+			kf, kforms, err = loader.KformDirLoader(ctx, resourcePath, false) // no special input processing required
+			if err != nil {
+				r.recorder.Record(diag.DiagFromErr(err))
+				return
+			}
+		*/
+		reader := pkgio.KformDirReader{
+			Path: path,
+		}
+		kformDataStore, err = reader.Read(ctx)
 		if err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
 			return
 		}
 	}
 
-	pkg := packageParser.Parse(ctx, kf, kforms)
+	pkg := packageParser.Parse(ctx, kformDataStore)
 	if r.recorder.Get().HasError() {
 		// if an error is found we stop processing
 		return

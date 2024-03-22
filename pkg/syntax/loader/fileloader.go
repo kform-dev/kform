@@ -1,5 +1,6 @@
 package loader
 
+/*
 import (
 	"context"
 	"fmt"
@@ -23,11 +24,9 @@ func KformFileLoader(ctx context.Context, path string, input bool) (*kformv1alph
 	fmt.Println(filepath.Dir(path))
 
 	fsys := fsys.NewDiskFS(filepath.Dir(path))
-
 	reader := pkgio.FileReader{
-		FileName:       filepath.Base(path),
-		Fsys:           fsys,            // map fsys
-		MatchFilesGlob: pkgio.YAMLMatch, // match only yaml files
+		FileName: filepath.Base(path),
+		Fsys:     fsys, // map fsys
 	}
 	data, err := reader.Read(ctx)
 	if err != nil {
@@ -37,3 +36,4 @@ func KformFileLoader(ctx context.Context, path string, input bool) (*kformv1alph
 	l := &kformloader{recorder: recorder}
 	return l.load(ctx, data, input)
 }
+*/

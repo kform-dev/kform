@@ -24,17 +24,15 @@ import (
 )
 
 type FileReader struct {
-	FileName       string
-	Fsys           fsys.FS
-	MatchFilesGlob []string
-	Checksum       bool
+	FileName string
+	Fsys     fsys.FS
+	Checksum bool
 }
 
 func (r *FileReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 	reader := filereader{
-		Checksum:       r.Checksum,
-		Fsys:           r.Fsys,
-		MatchFilesGlob: r.MatchFilesGlob,
+		Checksum: r.Checksum,
+		Fsys:     r.Fsys,
 	}
 	return reader.readFileContent(ctx, []string{r.FileName})
 }

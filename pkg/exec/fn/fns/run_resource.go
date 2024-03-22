@@ -14,21 +14,24 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn"
-	"github.com/kform-dev/kform/pkg/render/celrender"
+	"github.com/kform-dev/kform/pkg/render2/celrenderer"
 	"github.com/kform-dev/kform/pkg/syntax/types"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 func NewResourceFn(cfg *Config) fn.BlockInstanceRunner {
 	return &resource{
 		rootPackageName:   cfg.RootPackageName,
-		dataStore:         cfg.DataStore,
+		varStore:          cfg.VarStore,
+		outputStore:       cfg.OutputStore,
 		providerInstances: cfg.ProviderInstances,
 	}
 }
 
 type resource struct {
 	rootPackageName   string
-	dataStore         *data.DataStore
+	varStore          store.Storer[data.VarData]
+	outputStore       store.Storer[data.BlockData]
 	providerInstances store.Storer[plugin.Provider]
 }
 
@@ -39,23 +42,31 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
 	log.Debug("run block instance start...")
 
-	renderer := celrender.New(r.dataStore, localVars)
-	inputData, err := types.DeepCopy(vctx.Data.Data[data.DummyKey][0])
-	if err != nil {
-		return err
-	}
-	value, err := renderer.Render(ctx, inputData)
+	celrenderer := celrenderer.New(r.varStore, localVars)
+	n, err := celrenderer.Render(ctx, vctx.Data.Get()[0].YNode()) // copy for safety
 	if err != nil {
 		return fmt.Errorf("cannot render config for %s", vctx.String())
 	}
-	log.Debug("data", "raw req", value)
+	rn := yaml.NewRNode(n)
+	rnAnnotations := rn.GetAnnotations()
+	for _, a := range kformv1alpha1.KformAnnotations {
+		delete(rnAnnotations, a)
+	}
+	rn.SetAnnotations(rnAnnotations)
 
-	b, err := json.Marshal(value)
+	// to interact with the provider we need a json byte
+	b, err := rn.MarshalJSON()
 	if err != nil {
 		log.Error("cannot json marshal list", "error", err.Error())
 		return err
 	}
-	log.Debug("data", "json req", string(b))
+	/*
+		b, err := yaml.Marshal(yaml.NewRNode(value).MustString())
+		if err != nil {
+			log.Error("cannot json marshal list", "error", err.Error())
+			return err
+		}
+	*/
 
 	// 2. run provider
 	// lookup the provider in the provider instances
@@ -69,8 +80,9 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 
 	switch vctx.BlockType {
 	case kformv1alpha1.BlockTYPE_DATA:
+		log.Debug("resource data", "json req", string(b))
 		resp, err := provider.ReadDataSource(ctx, &kfplugin1.ReadDataSource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[1],
+			Name: strings.Split(vctx.BlockName, ".")[0],
 			Data: b,
 		})
 		if err != nil {
@@ -83,12 +95,13 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		}
 		b = resp.Data
 	case kformv1alpha1.BlockTYPE_RESOURCE:
+		log.Debug("resource data", "json req", string(b))
 		resp, err := provider.CreateResource(ctx, &kfplugin1.CreateResource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[1],
+			Name: strings.Split(vctx.BlockName, ".")[0],
 			Data: b,
 		})
 		if err != nil {
-			log.Error("cannot read resource", "error", err.Error())
+			log.Error("cannot apply resource", "error", err.Error())
 			return err
 		}
 		if diag.Diagnostics(resp.Diagnostics).HasError() {
@@ -99,11 +112,11 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	case kformv1alpha1.BlockTYPE_LIST:
 		// TBD how do we deal with a list
 		resp, err := provider.ListDataSource(ctx, &kfplugin1.ListDataSource_Request{
-			Name: strings.Split(vctx.BlockName, ".")[1],
+			Name: strings.Split(vctx.BlockName, ".")[0],
 			Data: b,
 		})
 		if err != nil {
-			log.Error("cannot read resource", "error", err.Error())
+			log.Error("cannot list resource", "error", err.Error())
 			return err
 		}
 		if diag.Diagnostics(resp.Diagnostics).HasError() {
@@ -115,13 +128,14 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		return fmt.Errorf("unexpected blockType, expected %v, got %s", types.ResourceBlockTypes, vctx.BlockType)
 	}
 
-	if err := json.Unmarshal(b, &value); err != nil {
+	v := map[string]any{}
+	if err := json.Unmarshal(b, &v); err != nil {
 		log.Error("cannot unmarshal resp", "error", err.Error())
 		return err
 	}
 	log.Debug("data response", "resp", string(b))
 
-	if err := r.dataStore.UpdateData(ctx, vctx.BlockName, value, localVars); err != nil {
+	if err := data.UpdateVarStore(ctx, r.varStore, vctx.BlockName, v, localVars); err != nil {
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}
 

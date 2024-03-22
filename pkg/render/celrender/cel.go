@@ -1,5 +1,6 @@
 package celrender
 
+/*
 import (
 	"fmt"
 	"regexp"
@@ -104,3 +105,4 @@ func (listslib) CompileOptions() []cel.EnvOption {
 		),
 	}
 }
+*/

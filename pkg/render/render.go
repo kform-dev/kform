@@ -35,7 +35,7 @@ func (r *commonRenderer) Render(ctx context.Context, x any) (any, error) {
 			if r.RenderFn != nil {
 				x[k], err = r.RenderFn(ctx, v)
 				if err != nil {
-					log.Info("render map[string]any", "err", err.Error())
+					log.Debug("render map[string]any", "err", err.Error())
 					// this is to handle cell rendering
 					if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 						delete(x, k)

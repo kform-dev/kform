@@ -1,5 +1,6 @@
 package celrender
 
+/*
 import (
 	"context"
 	"fmt"
@@ -18,10 +19,10 @@ metadata:
   namespace: network-system
   annotations:
     kform.dev/block-type: input
-    kform.dev/resource-id: context ## this serves as a way to add default and manage the merge 
+    kform.dev/resource-id: context ## this serves as a way to add default and manage the merge
     kform.dev/default: true
-data: 
-  data-server: 
+data:
+  data-server:
     image: europe-docker.pkg.dev/srlinux/eu.gcr.io/data-server:latest
   configServerImage: europe-docker.pkg.dev/srlinux/eu.gcr.io/config-server:latest
 `
@@ -99,3 +100,4 @@ func TestValidate(t *testing.T) {
 		})
 	}
 }
+*/

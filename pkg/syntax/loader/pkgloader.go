@@ -1,5 +1,6 @@
 package loader
 
+/*
 import (
 	"context"
 	"fmt"
@@ -30,7 +31,6 @@ func KformDirLoader(ctx context.Context, path string, input bool) (*kformv1alpha
 		ignoreRules, _ = ignore.Parse(f)
 	}
 	reader := pkgio.PkgReader{
-		PathExists:     true, // path was validated
 		Path:           path,
 		Fsys:           fsys,            // map fsys
 		MatchFilesGlob: pkgio.YAMLMatch, // match only yaml files
@@ -45,3 +45,4 @@ func KformDirLoader(ctx context.Context, path string, input bool) (*kformv1alpha
 	l := &kformloader{recorder: recorder}
 	return l.load(ctx, data, input)
 }
+*/

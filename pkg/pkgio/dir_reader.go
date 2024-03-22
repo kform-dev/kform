@@ -18,43 +18,68 @@ package pkgio
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"path/filepath"
+	"sync"
 
+	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/pkgio/ignore"
-	"github.com/henderiw/logger/log"
 )
 
-type PkgReader struct {
-	PathExists     bool
+type DirReader struct {
 	Path           string // dir
 	Fsys           fsys.FS
-	MatchFilesGlob []string
+	MatchFilesGlob MatchFilesGlob
 	IgnoreRules    *ignore.Rules
 	SkipDir        bool
 	Checksum       bool
 }
 
-func (r *PkgReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
-	if !r.PathExists {
-		return memory.NewStore[[]byte](), nil
-	}
+func (r *DirReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
+	datastore := memory.NewStore[[]byte]()
 	paths, err := r.getPaths(ctx)
 	if err != nil {
-		return memory.NewStore[[]byte](), err
+		return datastore, err
 	}
-	reader := filereader{
-		Checksum:       r.Checksum,
-		Fsys:           r.Fsys,
-		MatchFilesGlob: r.MatchFilesGlob,
+	var errm error
+	var wg sync.WaitGroup
+	for _, path := range paths {
+		path := path
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			f, err := r.Fsys.Open(path)
+			if err != nil {
+				errors.Join(errm, err)
+				return
+			}
+			defer f.Close()
+
+			reader := ByteReader{
+				Reader:    f,
+				Path:      path,
+				DataStore: datastore,
+			}
+			if _, err = reader.Read(ctx); err != nil {
+				errors.Join(errm, err)
+			}
+		}()
+
 	}
-	return reader.readFileContent(ctx, paths)
+	wg.Wait()
+	if errm != nil {
+		return datastore, errm
+	}
+	return datastore, nil
 }
 
-func (r *PkgReader) getPaths(ctx context.Context) ([]string, error) {
+func (r *DirReader) getPaths(ctx context.Context) ([]string, error) {
 	log := log.FromContext(ctx)
 	log.Debug("getPatchs")
 	// collect the paths
@@ -78,7 +103,7 @@ func (r *PkgReader) getPaths(ctx context.Context) ([]string, error) {
 			return nil
 		}
 		// process glob
-		if match, err := r.shouldSkipFile(path); err != nil {
+		if match, err := r.MatchFilesGlob.shouldSkipFile(path); err != nil {
 			return err
 		} else if match {
 			// skip the file
@@ -92,17 +117,16 @@ func (r *PkgReader) getPaths(ctx context.Context) ([]string, error) {
 	return paths, nil
 }
 
-func (r *PkgReader) Write(store.Storer[[]byte]) error {
-	return nil
-}
+type MatchFilesGlob []string
 
-func (r *PkgReader) shouldSkipFile(path string) (bool, error) {
-	for _, g := range r.MatchFilesGlob {
+func (m MatchFilesGlob) shouldSkipFile(path string) (bool, error) {
+	for _, g := range m {
+		g := g
 		if match, err := filepath.Match(g, filepath.Base(path)); err != nil {
 			// if err we should skip the file
 			return true, err
 		} else if match {
-			// if matchw e should include the file
+			// if match we should not skip the file
 			return false, nil
 		}
 	}

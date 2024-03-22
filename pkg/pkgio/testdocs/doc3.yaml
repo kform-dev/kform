@@ -1,0 +1,27 @@
+# comment
+apiVersion: v1 #comment
+kind: ConfigMap
+metadata:
+  name: doc3.1
+  namespace: default
+  annotations:
+    a: b
+data:
+  foo: bar
+  list:
+  - item1
+  - item2
+---
+# comment
+apiVersion: v1 #comment
+kind: ConfigMap
+metadata:
+  name: doc3.2
+  namespace: default
+  annotations:
+    c: d
+data:
+foo: bar
+list:
+- item1
+- item2

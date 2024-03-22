@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/henderiw/logger/log"
+	"github.com/henderiw/store"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
-	"github.com/kform-dev/kform/pkg/render/celrender"
+	"github.com/kform-dev/kform/pkg/render2/celrenderer"
 	"github.com/kform-dev/kform/pkg/syntax/types"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
@@ -25,12 +26,14 @@ func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
 		RootPackageName: cfg.RootPackageName,
 		PackageName:     cfg.PackageName,
 		BlockName:       cfg.BlockName,
-		DataStore:       cfg.DataStore,
+		VarStore:        cfg.VarStore,
+		OutputStore:     cfg.OutputStore,
 		Recorder:        cfg.Recorder,
 		fnsMap: NewMap(ctx, &Config{
 			Provider:          cfg.Provider,
 			RootPackageName:   cfg.RootPackageName,
-			DataStore:         cfg.DataStore,
+			VarStore:          cfg.VarStore,
+			OutputStore:       cfg.OutputStore,
 			Recorder:          cfg.Recorder,
 			ProviderInstances: cfg.ProviderInstances,
 			Providers:         cfg.Providers,
@@ -42,7 +45,8 @@ type ExecHandler struct {
 	RootPackageName string
 	PackageName     string
 	BlockName       string
-	DataStore       *data.DataStore
+	VarStore        store.Storer[data.VarData]
+	OutputStore     store.Storer[data.BlockData]
 	Recorder        recorder.Recorder[diag.Diagnostic]
 	fnsMap          Map
 }
@@ -124,14 +128,14 @@ type item struct {
 func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attributes) (bool, *items, error) {
 	log := log.FromContext(ctx)
 	log.Debug("getLoopItems", "attr", attr)
-	renderer := celrender.New(r.DataStore, map[string]any{})
+	celrenderer := celrenderer.New(r.VarStore, map[string]any{})
 	isForEach := false
 	items := initItems(1)
 	// forEach and count cannot be used together
 	if attr != nil {
 		if attr.ForEach != "" {
 			isForEach = true
-			v, err := renderer.Render(ctx, attr.ForEach)
+			v, err := celrenderer.RenderString(ctx, attr.ForEach)
 			if err != nil {
 				if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 					v = nil
@@ -161,7 +165,7 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 			return isForEach, items, nil
 		}
 		if attr.Count != "" {
-			v, err := renderer.Render(ctx, attr.Count)
+			v, err := celrenderer.RenderString(ctx, attr.Count)
 			if err != nil {
 				if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 					v = int64(0)

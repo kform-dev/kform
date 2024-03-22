@@ -2,22 +2,15 @@ package runner
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
-	"sort"
-	"strings"
 
 	"github.com/henderiw/logger/log"
-	"github.com/henderiw/store"
-	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
-	"github.com/kform-dev/kform/pkg/data"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/yaml"
+	"github.com/kform-dev/kform/pkg/pkgio"
 )
 
+/*
 type OutputSink int64
 
 const (
@@ -27,11 +20,14 @@ const (
 	OutputSink_StdOut
 	OutputSink_Memory
 )
+*/
 
-func (r *runner) getOuputSink(ctx context.Context) (OutputSink, error) {
-	output := OutputSink_StdOut
+func (r *runner) getOuputSink(ctx context.Context) (pkgio.OutputSink, error) {
+	log := log.FromContext(ctx)
+	log.Debug("getOuputSink")
+	output := pkgio.OutputSink_StdOut
 	if r.cfg.OutputData != nil { // if memory outpur is specified it gets priority
-		return OutputSink_Memory, nil
+		return pkgio.OutputSink_Memory, nil
 	}
 	if r.cfg.Output != "" {
 		//
@@ -39,25 +35,26 @@ func (r *runner) getOuputSink(ctx context.Context) (OutputSink, error) {
 		if err != nil {
 			fsi, err := os.Stat(filepath.Dir(r.cfg.Output))
 			if err != nil {
-				return OutputSink_None, fmt.Errorf("cannot init kform, output path does not exist: %s", r.cfg.Output)
+				return pkgio.OutputSink_None, fmt.Errorf("cannot init kform, output path does not exist: %s", r.cfg.Output)
 			}
 			if fsi.IsDir() {
-				output = OutputSink_File
+				output = pkgio.OutputSink_File
 			} else {
-				return OutputSink_None, fmt.Errorf("cannot init kform, output path does not exist: %s", r.cfg.Output)
+				return pkgio.OutputSink_None, fmt.Errorf("cannot init kform, output path does not exist: %s", r.cfg.Output)
 			}
 		} else {
 			if fsi.IsDir() {
-				output = OutputSink_Dir
+				output = pkgio.OutputSink_Dir
 			}
 			if fsi.Mode().IsRegular() {
-				output = OutputSink_File
+				output = pkgio.OutputSink_File
 			}
 		}
 	}
 	return output, nil
 }
 
+/*
 func (r *runner) getResources(ctx context.Context, dataStore *data.DataStore) (map[string]any, error) {
 	log := log.FromContext(ctx)
 	resources := map[string]any{}
@@ -115,9 +112,9 @@ func (r *runner) getResources(ctx context.Context, dataStore *data.DataStore) (m
 		}
 	})
 	return resources, errm
-
 }
-
+*/
+/*
 func (r *runner) outputResources(ctx context.Context, resources map[string]any) error {
 	switch r.outputSink {
 	case OutputSink_Memory:
@@ -165,8 +162,11 @@ func (r *runner) outputResources(ctx context.Context, resources map[string]any) 
 	}
 	return nil
 }
-
+*/
+/*
 func (r *runner) prepareOutputString(ctx context.Context, resources map[string]any) (string, error) {
+	log := log.FromContext(ctx)
+	log.Debug("prepareOutputString")
 	ordereredList := []string{
 		"Namespace",
 		"CustomResourceDefinition",
@@ -219,3 +219,4 @@ func (r *runner) prepareOutputString(ctx context.Context, resources map[string]a
 	}
 	return sb.String(), errm
 }
+*/

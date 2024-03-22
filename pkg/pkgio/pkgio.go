@@ -2,28 +2,30 @@ package pkgio
 
 import (
 	"context"
+	"path/filepath"
 
 	"github.com/henderiw/store"
 )
 
 var ReadmeFileMatch = []string{"README.md"}
-var IgnoreFileMatch = []string{".kformignore"}
-var PkgFileMatch = []string{"KformFile.yaml"}
+var IgnoreFileMatch = []string{".ignore"}
 var MarkdownMatch = []string{"*.md"}
 var YAMLMatch = []string{"*.yaml", "*.yml"}
 var JSONMatch = []string{"*.json"}
 var MatchAll = []string{"*"}
 
-func isYamlMatch(matches []string) bool {
-	if len(matches) != 2 {
-		return false
-	}
-	for i, match := range matches {
-		if match != YAMLMatch[i] {
+func isYamlMatch(path string) bool {
+	for _, g := range YAMLMatch {
+		if match, err := filepath.Match(g, filepath.Base(path)); err != nil {
+			// if err we return false -> dont process the file
 			return false
+		} else if match {
+			// if match we return true to process the file
+			return true
 		}
 	}
-	return true
+	// if no match we skip
+	return false
 }
 
 //var PkgMatch = []string{fmt.Sprintf("*.%s", kformOciPkgExt)}

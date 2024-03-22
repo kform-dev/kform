@@ -1,5 +1,6 @@
 package celrender
 
+/*
 import (
 	"context"
 	"strings"
@@ -136,19 +137,8 @@ func (r *renderer) stringRenderer(ctx context.Context, expr string) (any, error)
 			return nil, err
 		}
 
-		/*
-			result, err := val.ConvertToNative(reflect.TypeOf(""))
-			if err != nil {
-				log.Error("value conversion failed", "error", iss.Err())
-				return nil, err
-			}
-
-			s, ok := result.(string)
-			if !ok {
-				return nil, fmt.Errorf("expression returned non-string value: %v", result)
-			}
-		*/
 		return val.Value(), nil
 	}
 	return expr, nil
 }
+*/

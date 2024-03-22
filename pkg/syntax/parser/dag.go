@@ -1,3 +1,19 @@
+/*
+Copyright 2024 Nokia.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package parser
 
 import (
@@ -27,9 +43,15 @@ func (r *KformParser) generateDAG(ctx context.Context) {
 	log.Debug("generating DAG")
 	for packageName, pkg := range r.ListPackages(ctx) {
 		// generate a regular DAG, for a regular dag the provider configs don't matter
-		pkg.GenerateDAG(ctx, false, nil)
+		if err := pkg.GenerateDAG(ctx, false, nil); err != nil {
+			r.recorder.Record(diag.DiagFromErr(err))
+			return
+		}
 		// update the module with the DAG in the cache
-		r.packages.Update(ctx, store.ToKey(packageName), pkg)
+		if err := r.packages.Update(ctx, store.ToKey(packageName), pkg); err != nil {
+			r.recorder.Record(diag.DiagFromErr(err))
+			return
+		}
 	}
 	// since we call a DAG in hierarchy we need to update the DAGs with the calling DAG
 	// This is done after all the DAG(s) are generated
@@ -43,7 +65,10 @@ func (r *KformParser) generateDAG(ctx context.Context) {
 			for packageName, pkg := range r.ListPackages(ctx) {
 				if vertexName == packageName {
 					vCtx.DAG = pkg.DAG
-					pkg.DAG.UpdateVertex(ctx, vertexName, vCtx)
+					if err := pkg.DAG.UpdateVertex(ctx, vertexName, vCtx); err != nil {
+						r.recorder.Record(diag.DiagFromErr(err))
+						return
+					}
 				}
 			}
 		}

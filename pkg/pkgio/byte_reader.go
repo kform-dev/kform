@@ -19,9 +19,7 @@ package pkgio
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
-	"strings"
 
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
@@ -43,28 +41,12 @@ func (r *ByteReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 		datastore = memory.NewStore[[]byte]()
 	}
 
-	// by manually splitting resources -- otherwise the decoder will get the Resource
-	// boundaries wrong for header comments.
 	input := &bytes.Buffer{}
 	_, err := io.Copy(input, r.Reader)
 	if err != nil {
 		return datastore, err
 	}
-
-	// Replace the ending \r\n (line ending used in windows) with \n and then split it into multiple YAML documents
-	// if it contains document separators (---)
-	values, err := SplitDocuments(strings.ReplaceAll(input.String(), "\r\n", "\n"))
-	if err != nil {
-		return datastore, err
-	}
-	for i := range values {
-		// the Split used above will eat the tail '\n' from each resource. This may affect the
-		// literal string value since '\n' is meaningful in it.
-		if i != len(values)-1 {
-			values[i] += "\n"
-		}
-		datastore.Create(ctx, store.ToKey(fmt.Sprintf("%s.%d", r.Path, i)), []byte(values[i]))
-	}
+	datastore.Create(ctx, store.ToKey(r.Path), input.Bytes())
 
 	return datastore, nil
 }

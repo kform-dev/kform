@@ -1,5 +1,6 @@
 package loader
 
+/*
 import (
 	"context"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	koe "github.com/nephio-project/nephio/krm-functions/lib/kubeobject"
 )
+
 
 type kformloader struct {
 	recorder recorder.Recorder[diag.Diagnostic]
@@ -57,3 +59,4 @@ func (r *kformloader) load(ctx context.Context, data store.Storer[[]byte], input
 	})
 	return kfile, kforms, nil
 }
+*/

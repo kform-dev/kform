@@ -35,9 +35,10 @@ func TestValidateDirPath(t *testing.T) {
 					assert.NoError(t, err)
 				}
 				return
-			}
-			if err == nil && tc.expectedErr {
-				t.Errorf("want error, got nil")
+			} else {
+				if tc.expectedErr {
+					t.Errorf("want error, got nil")
+				}
 			}
 		})
 	}

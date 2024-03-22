@@ -8,6 +8,7 @@ import (
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/data"
+	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/parser"
@@ -39,7 +40,7 @@ type runner struct {
 	parser            *parser.KformParser
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
-	outputSink        OutputSink
+	outputSink        pkgio.OutputSink
 }
 
 func (r *runner) Run(ctx context.Context) error {
@@ -114,20 +115,30 @@ func (r *runner) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	errCh := make(chan error, 1)
-	dataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
+	outputStore := memory.NewStore[data.BlockData]()
 	// run go routine
-	go r.RunKformDAG(ctx, errCh, rootPackage, inputVars, dataStore)
+	go r.RunKformDAG(ctx, errCh, rootPackage, inputVars, outputStore)
 	// wait for kform dag to finish
 	err = <-errCh
 	if err != nil {
 		log.Error("exec failed", "err", err)
 	}
 
-	resources, err := r.getResources(ctx, dataStore)
-	if err != nil {
-		return err
+	/*
+		outputStore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+			for idx, rn := range bd {
+				fmt.Println("---")
+				fmt.Println(k.Name, idx)
+				fmt.Println(rn.MustString())
+
+			}
+		})
+	*/
+	w := pkgio.KformWriter{
+		Type: r.outputSink,
+		Path: r.cfg.Output,
 	}
+	return w.Write(ctx, outputStore)
 
-	return r.outputResources(ctx, resources)
-
+	//return r.outputResources(ctx, resources)
 }

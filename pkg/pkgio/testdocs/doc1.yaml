@@ -1,0 +1,11 @@
+# comment
+apiVersion: v1 #comment
+kind: ConfigMap
+metadata:
+  name: doc1
+  namespace: default
+data:
+  foo: bar
+  list:
+  - item1
+  - item2

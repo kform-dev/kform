@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/henderiw-nephio/kform/kform-plugin/plugin"
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
-	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/dag"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/executor"
@@ -23,7 +21,7 @@ import (
 func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 	return &pkg{
 		rootPackageName:   cfg.RootPackageName,
-		dataStore:         cfg.DataStore,
+		outputStore:       cfg.OutputStore,
 		recorder:          cfg.Recorder,
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
@@ -34,7 +32,7 @@ type pkg struct {
 	// initialized from the vertexContext
 	rootPackageName string
 	// dynamic injection required
-	dataStore         *data.DataStore
+	outputStore       store.Storer[data.BlockData]
 	recorder          recorder.Recorder[diag.Diagnostic]
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
@@ -57,20 +55,23 @@ Per execution instance (single or range (count/for_each))
 func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
 	log.Debug("run instance")
-	// render the new vars input
-	newDataStore := &data.DataStore{Storer: memory.NewStore[*data.BlockData]()}
+	// create a new outputStore and varStore
+	newOutputStore := memory.NewStore[data.BlockData]()
+	newVarStore := memory.NewStore[data.VarData]()
 
 	// localVars represent the dynamic input data into the package/mixin
 	// copy the data in the datastore
 	// 1. for KRM based input this is presented as blockData where the key of localVars is data.Blockdata
 	// 2. Count/ForEach stay local in the src package to copy data accross -> TBD
 	for blockName, blockData := range localVars {
-		data, ok := blockData.(*data.BlockData)
+		data, ok := blockData.(data.VarData)
 		if !ok {
 			return fmt.Errorf("unexpected data, expecting *data.BlockData, got: %s", reflect.TypeOf(blockData).Name())
 		}
-		newDataStore.Update(ctx, store.ToKey(blockName), data)
+		newVarStore.Update(ctx, store.ToKey(blockName), data)
 	}
+
+	// TODO add warning when an inputresource is specified and its corresponding dag entry does not exist
 
 	// prepare and execute the dag (provider or regular dag based on the provider flag)
 	// the vCtx.DAG is either the provider DAG or a regular DAG based on input
@@ -82,7 +83,8 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			// provider should not be set, since provider dag is not hierarchical
 			RootPackageName:   r.rootPackageName,
 			PackageName:       vctx.BlockName,
-			DataStore:         newDataStore,
+			VarStore:          newVarStore,
+			OutputStore:       newOutputStore,
 			Recorder:          r.recorder,
 			ProviderInstances: r.providerInstances,
 			Providers:         r.providers,
@@ -93,26 +95,12 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	}
 	success := e.Run(ctx)
 	if success {
-		// copy the output to the newResultStore to the original resultStore
-		newBlockData := data.NewBlockData()
-		newDataStore.List(ctx, func(ctx context.Context, key store.Key, blockdata *data.BlockData) {
-			parts := strings.Split(key.Name, ".")
-			if parts[0] == kformv1alpha1.BlockTYPE_OUTPUT.String() {
-				if data, ok := blockdata.Data[data.DummyKey]; ok {
-					// The result is stored in a single entry but the output keys are stored in a map
-					// for all other blockTypes we use the dummyKey but here we store the
-					// last element of the blockName as the key in the result
-					for i, dataInstance := range data {
-						i := i
-						dataInstance := dataInstance
-						newBlockData.Insert(parts[1], len(data), i, dataInstance)
-					}
-				}
-			}
+		// copy the output from newOutputStore to outputStore
+		// Every package works independently, so this ensure isolation
+		newOutputStore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+			// TODO output prefix needs to be replaced with mixin.packagename.<outputvariable>
+			r.outputStore.Create(ctx, k, bd)
 		})
-		if len(newBlockData.Data) > 0 {
-			r.dataStore.Update(ctx, store.ToKey(vctx.BlockName), newBlockData)
-		}
 	}
 	return nil
 }
