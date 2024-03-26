@@ -32,11 +32,13 @@ type YAMLWriter struct {
 	Path string
 }
 
+/*
 type fileIndex struct {
 	fileName string
 	index    string
 	entry    string
 }
+*/
 
 func (r *YAMLWriter) Write(ctx context.Context, datastore store.Storer[*yaml.RNode]) error {
 	// preprocess the list

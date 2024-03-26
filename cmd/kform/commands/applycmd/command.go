@@ -2,24 +2,27 @@ package applycmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path/filepath"
 
+	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/kform/runner"
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/kubectl/pkg/cmd/util"
 	//docs "github.com/kform-dev/kform/internal/docs/generated/applydocs"
 )
 
-func NewCommand(ctx context.Context, version string) *cobra.Command {
-	return NewRunner(ctx, version).Command
+func NewCommand(ctx context.Context, factory util.Factory, ioStreams genericclioptions.IOStreams) *cobra.Command {
+	return NewRunner(ctx, factory, ioStreams).Command
 }
 
 // NewRunner returns a command runner.
-func NewRunner(ctx context.Context, version string) *Runner {
-	r := &Runner{}
+func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericclioptions.IOStreams) *Runner {
+	r := &Runner{
+		Factory: factory,
+	}
 	cmd := &cobra.Command{
-		Use:  "apply [flags]",
+		Use:  "apply (DIRECTORY | STDIN) [flags]",
 		Args: cobra.ExactArgs(1),
 		//Short:   docs.ApplyShort,
 		//Long:    docs.ApplyShort + "\n" + docs.ApplyLong,
@@ -38,7 +41,7 @@ func NewRunner(ctx context.Context, version string) *Runner {
 
 type Runner struct {
 	Command     *cobra.Command
-	rootPath    string
+	Factory     util.Factory
 	AutoApprove bool
 	Input       string
 	Output      string
@@ -48,21 +51,17 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx := c.Context()
 	//log := log.FromContext(ctx)
 
-	r.rootPath = args[0]
-	// check if the root path exists
-	fsi, err := os.Stat(r.rootPath)
+	path, err := fsys.NormalizeDir(args[0])
 	if err != nil {
-		return fmt.Errorf("cannot init kform, path does not exist: %s", r.rootPath)
-	}
-	if !fsi.IsDir() {
-		return fmt.Errorf("cannot init kform, path is not a directory: %s", r.rootPath)
+		return err
 	}
 
 	kfrunner := runner.NewKformRunner(&runner.Config{
-		PackageName:  filepath.Base(r.rootPath),
-		Input:        r.Input,
-		Output:       r.Output,
-		ResourcePath: r.rootPath,
+		Factory:     r.Factory,
+		PackageName: filepath.Base(path),
+		Input:       r.Input,
+		Output:      r.Output,
+		Path:        path,
 	})
 
 	return kfrunner.Run(ctx)

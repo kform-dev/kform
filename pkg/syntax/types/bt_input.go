@@ -51,7 +51,6 @@ func (r *input) UpdatePackage(ctx context.Context) {
 	// get the block name
 	blockType := cctx.GetContextValue[kformv1alpha1.BlockType](ctx, CtxKeyBlockType)
 	rn := cctx.GetContextValue[*yaml.RNode](ctx, CtxKeyYamlRNODE)
-	//name := cctx.GetContextValue[string](ctx, CtxKeyResourceID)
 	annotations := rn.GetAnnotations()
 	name := annotations[kformv1alpha1.KformAnnotationKey_RESOURCE_ID]
 	if name == "" {
@@ -70,7 +69,7 @@ func (r *input) UpdatePackage(ctx context.Context) {
 
 	// checks if the blockName exists -> for blockType input this is allowed; since we can have multiple inputs
 	// with the same input name
-	//for other blockTypes this is not allowed
+	// for other blockTypes this is not allowed, except for data to read inventory
 	block, err := pkg.Blocks.Get(ctx, store.ToKey(blockName))
 	if err != nil {
 		// block does not exist -> create

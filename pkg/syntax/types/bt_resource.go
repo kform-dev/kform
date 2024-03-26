@@ -62,8 +62,6 @@ func (r *resource) UpdatePackage(ctx context.Context) {
 	annotations := rn.GetAnnotations()
 	resourceType := annotations[kformv1alpha1.KformAnnotationKey_RESOURCE_TYPE]
 	resourceID := annotations[kformv1alpha1.KformAnnotationKey_RESOURCE_ID]
-	//resourceType := cctx.GetContextValue[string](ctx, CtxKeyResourceType)
-	//resourceID := cctx.GetContextValue[string](ctx, CtxKeyResourceID)
 	blockName := fmt.Sprintf("%s.%s", resourceType, resourceID)
 
 	// this records the errors
@@ -99,12 +97,20 @@ func (r *resource) UpdatePackage(ctx context.Context) {
 		}
 		return
 	}
-	// duplicate resources
-	r.recorder.Record(diag.DiagFromErrWithContext(
-		Context{ctx}.String(),
-		fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",
-			block.GetFileName(),
-			block.GetBlockName(),
-			block.GetBlockType(),
-		)))
+	// augment the data with additional resources, for inventory read this is needed
+	if blockType != kformv1alpha1.BlockTYPE_DATA {
+		// duplicate resources
+		r.recorder.Record(diag.DiagFromErrWithContext(
+			Context{ctx}.String(),
+			fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",
+				block.GetFileName(),
+				block.GetBlockName(),
+				block.GetBlockType(),
+			)))
+	}
+	// this is blockType data -> we allow for multiple resources per resource for inventory read
+	// scenarios with multiple resources
+	if err := block.addData(ctx, rn); err != nil {
+		r.recorder.Record(diag.DiagFromErr(err))
+	}
 }

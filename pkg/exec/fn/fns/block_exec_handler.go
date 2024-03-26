@@ -30,13 +30,14 @@ func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
 		OutputStore:     cfg.OutputStore,
 		Recorder:        cfg.Recorder,
 		fnsMap: NewMap(ctx, &Config{
-			Provider:          cfg.Provider,
+			Kind:              cfg.Kind,
 			RootPackageName:   cfg.RootPackageName,
 			VarStore:          cfg.VarStore,
 			OutputStore:       cfg.OutputStore,
 			Recorder:          cfg.Recorder,
 			ProviderInstances: cfg.ProviderInstances,
 			Providers:         cfg.Providers,
+			PackageResources:  cfg.PackageResources,
 		}),
 	}
 }

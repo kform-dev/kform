@@ -1,0 +1,45 @@
+apiVersion: v1 
+kind: ConfigMap
+data:
+  providers: |
+    prov1: |
+      apiVersion: kubernetes.provider.kform.io/v1alpha1
+      kind: ProviderConfig
+      metadata:
+        name: kubernetes
+        namespace: default
+      spec:
+        configPath: ~/.kube/config
+    prov2: |
+      apiVersion: kubernetes.provider.kform.io/v1alpha1
+      kind: ProviderConfig
+      metadata:
+        name: kubernetes
+        namespace: default
+      spec:
+        configPath: ~/.kube/config
+  packages: |
+    root:
+      kubernetes_manifest.bla1:
+        - objectRef:
+            group: ''
+            kind: ConfigMap
+            name: cm1
+            namespace: default
+        - objectRef:
+            group: ''
+            kind: ConfigMap
+            name: cm2
+            namespace: default
+    pkg1:
+      kubernetes_manifest.bla1:
+        - objectRef:
+            group: ''
+            kind: ConfigMap
+            name: cm1
+            namespace: default
+        - objectRef:
+            group: ''
+            kind: ConfigMap
+            name: cm2
+            namespace: default

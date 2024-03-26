@@ -32,9 +32,8 @@ func newBackend(ctx context.Context) BlockProcessor {
 	return &backend{
 		blockValidator: &blockValidator{
 			expectedAnnotations: map[string]bool{
-				kformv1alpha1.KformAnnotationKey_RESOURCE_ID: mandatory,
-				kformv1alpha1.KformAnnotationKey_SOURCE:      mandatory,
-				kformv1alpha1.KformAnnotationKey_VERSION:     mandatory,
+				kformv1alpha1.KformAnnotationKey_BLOCK_TYPE:  mandatory,
+				kformv1alpha1.KformAnnotationKey_RESOURCE_ID: optional,
 			},
 			recorder: cctx.GetContextValue[recorder.Recorder[diag.Diagnostic]](ctx, CtxKeyRecorder),
 		},
@@ -49,7 +48,6 @@ func (r *backend) UpdatePackage(ctx context.Context) {
 	// get the block name
 	blockType := cctx.GetContextValue[kformv1alpha1.BlockType](ctx, CtxKeyBlockType)
 	rn := cctx.GetContextValue[*yaml.RNode](ctx, CtxKeyYamlRNODE)
-	//name := cctx.GetContextValue[string](ctx, CtxKeyResourceID)
 	annotations := rn.GetAnnotations()
 	name := annotations[kformv1alpha1.KformAnnotationKey_RESOURCE_ID]
 	if name == "" {
@@ -69,22 +67,24 @@ func (r *backend) UpdatePackage(ctx context.Context) {
 
 	// NOTE only expecting 1 backend
 	if pkg.Backend != nil {
-
-		block, err := NewBlock(ctx, blockType, blockName, rn)
-		if err != nil {
-			r.recorder.Record(diag.DiagFromErr(err))
-			return
-		}
-		// checks for duplicate resources
-		if err := pkg.Blocks.Create(ctx, store.ToKey(blockName), block); err != nil {
-			r.recorder.Record(diag.DiagFromErrWithContext(
-				Context{ctx}.String(),
-				fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",
-					block.GetFileName(),
-					block.GetBlockName(),
-					block.GetBlockType(),
-				)))
-		}
-		pkg.Backend = block
+		r.recorder.Record(diag.DiagFromErrWithContext(Context{ctx}.String(), fmt.Errorf("cannot have more than 1 backend")))
+		return
 	}
+	block, err := NewBlock(ctx, blockType, blockName, rn)
+	if err != nil {
+		r.recorder.Record(diag.DiagFromErr(err))
+		return
+	}
+	// checks for duplicate resources
+	if err := pkg.Blocks.Create(ctx, store.ToKey(blockName), block); err != nil {
+		r.recorder.Record(diag.DiagFromErrWithContext(
+			Context{ctx}.String(),
+			fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",
+				block.GetFileName(),
+				block.GetBlockName(),
+				block.GetBlockType(),
+			)))
+	}
+	pkg.Backend = block
+
 }

@@ -26,7 +26,30 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
+
+// if a resource is present in any package we expect a backend to be present
+// to store the resources
+func (r *KformParser) validateBackend(ctx context.Context) {
+	resourceSet := sets.New[types.Block]()
+	for _, pkg := range r.ListPackages(ctx) {
+		resourceSet.Insert(pkg.ListResources(ctx).UnsortedList()...)
+	}
+	// if no resources are present we dont need a backend
+	if resourceSet.Len() == 0 {
+		return
+	}
+
+	rootPackage, err := r.GetRootPackage(ctx)
+	if err != nil {
+		r.recorder.Record(diag.DiagFromErr(err))
+	}
+
+	if rootPackage.Backend == nil {
+		r.recorder.Record(diag.DiagFromErr(fmt.Errorf("no backend specified")))
+	}
+}
 
 // validateProviderConfigs validates if for each provider in a child resource
 // there is a provider config

@@ -1,8 +1,3 @@
-//go:generate $GOBIN/mdtogo ./../../../site/reference/cli/init ./../../../internal/docs/generated/initdocs --license=none --recursive=true --strategy=cmdDocs
-//go:generate $GOBIN/mdtogo ./../../../site/reference/cli/apply ./../../../internal/docs/generated/applydocs --license=none --recursive=true --strategy=cmdDocs
-//go:generate $GOBIN/mdtogo ./../../../site/reference/cli/pkg ./../../../internal/docs/generated/pkgdocs --license=none --recursive=true --strategy=cmdDocs
-//go:generate $GOBIN/mdtogo ./../../../site/reference/cli/README.md ./../../../internal/docs/generated/overview --license=none --strategy=cmdDocs
-
 package main
 
 import (

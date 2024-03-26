@@ -15,7 +15,7 @@ import (
 type BlockData []*yaml.RNode
 
 // Insert inserts data in the blockdata if you know the position
-func (r BlockData) Insert(key string, total, pos int, data *yaml.RNode) (BlockData, error) {
+func (r BlockData) Insert(total, pos int, data *yaml.RNode) (BlockData, error) {
 	if len(r) != total {
 		r = make([]*yaml.RNode, total)
 	}
@@ -30,8 +30,12 @@ func (r BlockData) Insert(key string, total, pos int, data *yaml.RNode) (BlockDa
 	return r, nil
 }
 
-func (r BlockData) Add(key string, data *yaml.RNode) BlockData {
+func (r BlockData) Add(data *yaml.RNode) BlockData {
 	return append(r, data)
+}
+
+func (r BlockData) Len() int {
+	return len(r)
 }
 
 func (r BlockData) Get() []*yaml.RNode {
@@ -57,7 +61,7 @@ func (r BlockData) GetVarData() (VarData, error) {
 
 // Updates the results in the store; for loop vars it uses the index of the loop var to store the result
 // since we store the results of a given blockName in a slice []any
-func UpdateOutputStore(ctx context.Context, outputStore store.Storer[BlockData], blockName string, data *yaml.RNode, localVars map[string]any) error {
+func UpdateBlockStore(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, data *yaml.RNode, localVars map[string]any) error {
 	total, ok := localVars[kformv1alpha1.LoopKeyItemsTotal]
 	if !ok {
 		total = 1
@@ -79,11 +83,11 @@ func UpdateOutputStore(ctx context.Context, outputStore store.Storer[BlockData],
 		return fmt.Errorf("index cannot be bigger or equal to total index: %d, totol: %d", indexInt, totalInt)
 	}
 	var errm error
-	outputStore.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockData BlockData) BlockData {
+	storeInstance.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockData BlockData) BlockData {
 		if blockData == nil {
 			blockData = BlockData{}
 		}
-		blockData, err := blockData.Insert(DummyKey, totalInt, indexInt, data)
+		blockData, err := blockData.Insert(totalInt, indexInt, data)
 		if err != nil {
 			errors.Join(errm, err)
 		}

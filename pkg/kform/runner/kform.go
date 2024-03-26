@@ -24,16 +24,17 @@ func (r *runner) RunProviderDAG(ctx context.Context, rootPackage *types.Package,
 	// run the provider DAG
 	log.Debug("create provider runner")
 	rmfn := fns.NewPackageFn(&fns.Config{
-		Provider:          true,
+		Kind:              fns.DagRunProvider,
 		RootPackageName:   rootPackage.Name,
 		OutputStore:       outputStore,
 		Recorder:          runRecorder,
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
+		PackageResources:  memory.NewStore[store.Storer[data.BlockData]](), // dummy init
 	})
 	log.Debug("executing provider runner DAG")
 	if err := rmfn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.cfg.ResourcePath, "provider"),
+		FileName:    filepath.Join(r.cfg.Path, "provider"),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,
@@ -46,7 +47,7 @@ func (r *runner) RunProviderDAG(ctx context.Context, rootPackage *types.Package,
 	return nil
 }
 
-func (r *runner) RunKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any, outputStore store.Storer[data.BlockData]) {
+func (r *runner) RunKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any, outputStore store.Storer[data.BlockData], pkgResourcesStore store.Storer[store.Storer[data.BlockData]]) {
 	log := log.FromContext(ctx)
 	defer close(errCh)
 
@@ -58,11 +59,12 @@ func (r *runner) RunKformDAG(ctx context.Context, errCh chan error, rootPackage 
 		Recorder:          runRecorder,
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
+		PackageResources:  pkgResourcesStore,
 	})
 
 	log.Debug("executing package")
 	if err := cmdPackageFn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.cfg.ResourcePath, "provider"),
+		FileName:    filepath.Join(r.cfg.Path, "provider"),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,

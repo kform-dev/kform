@@ -2,17 +2,21 @@ package runner
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/henderiw-nephio/kform/kform-plugin/plugin"
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
+	"github.com/kform-dev/kform/apis/inv/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
+	"github.com/kform-dev/kform/pkg/inventory/manager"
 	"github.com/kform-dev/kform/pkg/pkgio"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/parser"
 	"github.com/kform-dev/kform/pkg/syntax/types"
+	"k8s.io/kubectl/pkg/cmd/util"
 )
 
 type Runner interface {
@@ -20,12 +24,13 @@ type Runner interface {
 }
 
 type Config struct {
+	Factory      util.Factory
 	PackageName  string
 	Input        string // used for none, file or dir
 	InputData    store.Storer[[]byte]
 	Output       string
 	OutputData   store.Storer[[]byte]
-	ResourcePath string // path of the kform files
+	Path         string // path of the kform files
 	ResourceData store.Storer[[]byte]
 }
 
@@ -41,10 +46,19 @@ type runner struct {
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
 	outputSink        pkgio.OutputSink
+	invManager        manager.Manager
 }
 
 func (r *runner) Run(ctx context.Context) error {
 	log := log.FromContext(ctx)
+
+	// initialize the inventory
+	var err error
+	r.invManager, err = manager.New(ctx, r.cfg.Path, r.cfg.Factory, v1alpha1.ActuationStrategyApply)
+	if err != nil {
+		return err
+	}
+
 	inputVars, err := r.getInputVars(ctx)
 	if err != nil {
 		return err
@@ -62,7 +76,7 @@ func (r *runner) Run(ctx context.Context) error {
 	log.Debug("parsing packages")
 	r.parser, err = parser.NewKformParser(ctx, &parser.Config{
 		PackageName:  r.cfg.PackageName,
-		ResourcePath: r.cfg.ResourcePath,
+		Path:         r.cfg.Path,
 		ResourceData: r.cfg.ResourceData,
 	})
 	if err != nil {
@@ -116,29 +130,35 @@ func (r *runner) Run(ctx context.Context) error {
 	defer cancel()
 	errCh := make(chan error, 1)
 	outputStore := memory.NewStore[data.BlockData]()
+	pkgResourcesStore := memory.NewStore[store.Storer[data.BlockData]]()
 	// run go routine
-	go r.RunKformDAG(ctx, errCh, rootPackage, inputVars, outputStore)
+	go r.RunKformDAG(ctx, errCh, rootPackage, inputVars, outputStore, pkgResourcesStore)
 	// wait for kform dag to finish
 	err = <-errCh
 	if err != nil {
 		log.Error("exec failed", "err", err)
 	}
 
-	/*
-		outputStore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
-			for idx, rn := range bd {
-				fmt.Println("---")
-				fmt.Println(k.Name, idx)
-				fmt.Println(rn.MustString())
+	listPackageResources(ctx, pkgResourcesStore)
 
-			}
-		})
-	*/
+	if err := r.invManager.Apply(ctx); err != nil {
+		return err
+	}
+
 	w := pkgio.KformWriter{
 		Type: r.outputSink,
 		Path: r.cfg.Output,
 	}
 	return w.Write(ctx, outputStore)
+}
 
-	//return r.outputResources(ctx, resources)
+func listPackageResources(ctx context.Context, pkgResourcesStore store.Storer[store.Storer[data.BlockData]]) {
+	pkgResourcesStore.List(ctx, func(ctx context.Context, k store.Key, s store.Storer[data.BlockData]) {
+		fmt.Println("pkg", k.Name)
+		s.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+			for idx, rn := range bd.Get() {
+				fmt.Println("resource", k.String(), "idx", idx, rn.MustString())
+			}
+		})
+	})
 }

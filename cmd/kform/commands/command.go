@@ -2,28 +2,25 @@ package commands
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log/slog"
-	"path/filepath"
+	"os"
+	"time"
 
-	"github.com/adrg/xdg"
+	"github.com/henderiw/logger/log"
 	"github.com/kform-dev/kform/cmd/kform/commands/applycmd"
+	"github.com/kform-dev/kform/cmd/kform/commands/initcmd"
 	"github.com/kform-dev/kform/cmd/kform/globals"
-	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-)
-
-const (
-	defaultConfigFileSubDir  = "kform"
-	defaultConfigFileName    = "kform"
-	defaultConfigFileNameExt = "yaml"
-	defaultConfigEnvPrefix   = "KFORM"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/rest"
+	"k8s.io/kubectl/pkg/cmd/util"
+	"sigs.k8s.io/cli-utils/pkg/flowcontrol"
 )
 
 var (
-	configFile string
-	debug      bool
+	debug bool
 )
 
 func GetMain(ctx context.Context) *cobra.Command {
@@ -40,11 +37,6 @@ func GetMain(ctx context.Context) *cobra.Command {
 			if debug {
 				globals.LogLevel.Set(slog.LevelDebug)
 			}
-			// initialize viper
-			// ensure the viper config directory exists
-			cobra.CheckErr(fsys.EnsureDir(ctx, xdg.ConfigHome, defaultConfigFileSubDir))
-			// initialize viper settings
-			initConfig()
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -59,10 +51,35 @@ func GetMain(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	defaultConfigFile := fmt.Sprintf("%s/%s/%s.%s", xdg.ConfigHome, defaultConfigFileSubDir, defaultConfigFileName, defaultConfigFileNameExt)
-	cmd.PersistentFlags().StringVarP(&configFile, "config", "c", defaultConfigFile, "config file to store config information for kform")
 	cmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
-	cmd.AddCommand(applycmd.NewCommand(ctx, version))
+	// kubernetes flags
+	flags := cmd.PersistentFlags()
+	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()
+	kubeConfigFlags.AddFlags(flags)
+	matchVersionKubeConfigFlags := util.NewMatchVersionFlags(kubeConfigFlags)
+	matchVersionKubeConfigFlags.AddFlags(flags)
+	flags.AddGoFlagSet(flag.CommandLine)
+	f := util.NewFactory(matchVersionKubeConfigFlags)
+
+	// Update ConfigFlags before subcommands run that talk to the server.
+	preRunE := newConfigFilerPreRunE(ctx, f, kubeConfigFlags)
+
+	ioStreams := genericclioptions.IOStreams{
+		In:     os.Stdin,
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	}
+
+	subCmds := map[string]*cobra.Command{
+		"init":  initcmd.NewCommand(ctx, ioStreams),
+		"apply": applycmd.NewCommand(ctx, f, ioStreams),
+	}
+
+	for _, subCmd := range subCmds {
+		subCmd.PreRunE = preRunE
+		//updateHelp(names, subCmd)
+		cmd.AddCommand(subCmd)
+	}
 	return cmd
 }
 
@@ -71,28 +88,33 @@ type Runner struct {
 	//Ctx     context.Context
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if configFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(configFile)
-	} else {
+// newConfigFilerPreRunE returns a cobra command PreRunE function that
+// performs a lookup to determine if server-side throttling is enabled. If so,
+// client-side throttling is disabled in the ConfigFlags.
+func newConfigFilerPreRunE(ctx context.Context, f util.Factory, configFlags *genericclioptions.ConfigFlags) func(*cobra.Command, []string) error {
+	log := log.FromContext(ctx)
+	return func(_ *cobra.Command, args []string) error {
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
 
-		viper.AddConfigPath(filepath.Join(xdg.ConfigHome, defaultConfigFileName, defaultConfigFileNameExt))
-		viper.SetConfigType(defaultConfigFileNameExt)
-		viper.SetConfigName(defaultConfigFileSubDir)
-
-		_ = viper.SafeWriteConfig()
-	}
-
-	//viper.Set("kubecontext", kubecontext)
-	//viper.Set("kubeconfig", kubeconfig)
-
-	viper.SetEnvPrefix(defaultConfigEnvPrefix)
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		_ = 1
+		restConfig, err := f.ToRESTConfig()
+		if err != nil {
+			return err
+		}
+		enabled, err := flowcontrol.IsEnabled(ctx, restConfig)
+		if err != nil {
+			return fmt.Errorf("checking server-side throttling enablement: %w", err)
+		}
+		if enabled {
+			// Disable client-side throttling.
+			log.Debug("client-side throttling disabled")
+			// WrapConfigFn will affect future Factory.ToRESTConfig() calls.
+			configFlags.WrapConfigFn = func(cfg *rest.Config) *rest.Config {
+				cfg.QPS = -1
+				cfg.Burst = -1
+				return cfg
+			}
+		}
+		return nil
 	}
 }

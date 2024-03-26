@@ -97,8 +97,11 @@ func (r *Package) AddDependencies(ctx context.Context) {
 	// input blocks and orphan blocks should not have dependencies
 	// so we can exclude them from finding dependencies
 	for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
-		ExludeOrphan:  true,
-		PrefixExludes: []string{kformv1alpha1.BlockTYPE_INPUT.String()},
+		ExludeOrphan: true,
+		PrefixExludes: []string{
+			kformv1alpha1.BlockTYPE_INPUT.String(),
+			kformv1alpha1.BlockType_BACKEND.String(),
+		},
 	}) {
 		deprenderer := deprenderer.New(blocks)
 		// we do this to avoid copying the data
@@ -159,6 +162,7 @@ func (r *Package) ResolveResource2ProviderConfig(ctx context.Context) {
 		kformv1alpha1.BlockTYPE_OUTPUT.String(),
 		kformv1alpha1.BlockTYPE_LOCAL.String(),
 		kformv1alpha1.BlockTYPE_PACKAGE.String(),
+		kformv1alpha1.BlockType_BACKEND.String(),
 	}}) {
 		provider := b.GetProvider()
 		if _, err := r.ProviderConfigs.Get(ctx, store.ToKey(provider)); err != nil {
@@ -244,6 +248,7 @@ func (r *Package) ListProvidersFromResources(ctx context.Context) sets.Set[strin
 			kformv1alpha1.BlockTYPE_LOCAL.String(),
 			kformv1alpha1.BlockTYPE_PACKAGE.String(),
 			kformv1alpha1.BlockTYPE_PROVIDER.String(),
+			kformv1alpha1.BlockType_BACKEND.String(),
 		}}) {
 		providers.Insert(block.GetProvider())
 	}
@@ -262,6 +267,7 @@ func (r *Package) ListRawProvidersFromResources(ctx context.Context) sets.Set[st
 			kformv1alpha1.BlockTYPE_LOCAL.String(),
 			kformv1alpha1.BlockTYPE_PACKAGE.String(),
 			kformv1alpha1.BlockTYPE_PROVIDER.String(),
+			kformv1alpha1.BlockType_BACKEND.String(),
 		}}) {
 		providers.Insert(strings.Split(block.GetProvider(), "_")[0])
 	}
@@ -274,6 +280,17 @@ func (r *Package) ListProviderRequirements(ctx context.Context) map[string]kform
 		providerRequirements[key.Name] = provider
 	})
 	return providerRequirements
+}
+
+func (r *Package) ListResources(ctx context.Context) sets.Set[Block] {
+	resources := sets.New[Block]()
+	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+		ExludeOrphan: true,
+		Prefix:       kformv1alpha1.BlockTYPE_RESOURCE.String(),
+	}) {
+		resources.Insert(block)
+	}
+	return resources
 }
 
 func (r *Package) GenerateDAG(ctx context.Context, provider bool, usedProviderConfigs sets.Set[string]) error {
@@ -340,7 +357,11 @@ func (r *Package) generateDAG(ctx context.Context, provider bool, usedProviderCo
 		// - locals
 		// - modules
 		// - resources
-		for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{ExludeOrphan: true}) {
+		// - providers
+		for blockName, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
+			ExludeOrphan:  true,
+			PrefixExludes: []string{kformv1alpha1.BlockType_BACKEND.String()},
+		}) {
 			if err := addVertex(ctx, d, blockName, block); err != nil {
 				return nil, err
 			}

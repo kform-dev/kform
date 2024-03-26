@@ -25,6 +25,7 @@ func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 		recorder:          cfg.Recorder,
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
+		pkgResources:      cfg.PackageResources,
 	}
 }
 
@@ -36,6 +37,7 @@ type pkg struct {
 	recorder          recorder.Recorder[diag.Diagnostic]
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
+	pkgResources      store.Storer[store.Storer[data.BlockData]]
 }
 
 /*
@@ -55,9 +57,11 @@ Per execution instance (single or range (count/for_each))
 func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
 	log.Debug("run instance")
-	// create a new outputStore and varStore
+	// create a new outputStore and varStore and an instance of the packageResources
 	newOutputStore := memory.NewStore[data.BlockData]()
 	newVarStore := memory.NewStore[data.VarData]()
+	newPkgResourceStore := memory.NewStore[data.BlockData]()
+	r.pkgResources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
 
 	// localVars represent the dynamic input data into the package/mixin
 	// copy the data in the datastore
@@ -88,6 +92,7 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			Recorder:          r.recorder,
 			ProviderInstances: r.providerInstances,
 			Providers:         r.providers,
+			PackageResources:  r.pkgResources,
 		}),
 	})
 	if err != nil {

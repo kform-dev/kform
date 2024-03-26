@@ -22,8 +22,18 @@ type Map interface {
 	fn.BlockInstanceRunner
 }
 
+//nolint:revive // consistent prefix improves tab-completion for enums
+//go:generate stringer -type=DagRun -linecomment
+type DagRun int
+
+const (
+	DagRunRegular   DagRun = iota // Regular
+	DagRunProvider                // Provider
+	DagRunInventory               // Inventory
+)
+
 type Config struct {
-	Provider    bool // inidcates if this is a provider or a regular dag run
+	Kind        DagRun // inidcates if this is a regular, provider or inventory run
 	PackageName string
 	BlockName   string
 
@@ -36,6 +46,8 @@ type Config struct {
 	// hold the raw provider reference to the provider
 	// used for the provider DAG run only
 	Providers store.Storer[types.Provider]
+	// used to capture all resources applied by a given provider per package
+	PackageResources store.Storer[store.Storer[data.BlockData]]
 }
 
 func NewMap(ctx context.Context, cfg *Config) Map {

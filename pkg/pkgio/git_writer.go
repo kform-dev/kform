@@ -26,7 +26,7 @@ import (
 	pkgv1alpha1 "github.com/kform-dev/pkg-server/apis/pkg/v1alpha1"
 	"github.com/kform-dev/pkg-server/apis/pkgid"
 	"github.com/kform-dev/pkg-server/pkg/auth/ui"
-	"github.com/kform-dev/pkg-server/pkg/auth/viper"
+	//"github.com/kform-dev/pkg-server/pkg/auth/viper"
 	"github.com/kform-dev/pkg-server/pkg/git/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -75,8 +75,8 @@ func (r *GitWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) e
 		configv1alpha1.RepositoryStatus{},
 	)
 	cachedRepo, err := pkg.OpenRepository(ctx, pkgDir, repo, &pkg.Options{
-		CredentialResolver: viper.NewCredentialResolver(),
-		UserInfoProvider:   &ui.ApiserverUserInfoProvider{},
+		//CredentialResolver: viper.NewCredentialResolver(),
+		UserInfoProvider: &ui.ApiserverUserInfoProvider{},
 	})
 	if err != nil {
 		return err

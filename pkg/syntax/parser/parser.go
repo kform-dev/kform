@@ -34,7 +34,7 @@ import (
 
 type Config struct {
 	PackageName  string
-	ResourcePath string
+	Path         string
 	ResourceData store.Storer[[]byte]
 }
 
@@ -67,7 +67,7 @@ func (r *KformParser) Parse(ctx context.Context) {
 	// we start by parsing the root packages
 	// if there are child packages/mixins they will be resolved concurrently
 	//r.rootPackageName = fmt.Sprintf("%s.%s", kformv1alpha1.BlockTYPE_PACKAGE.String(), filepath.Base(r.rootPackagePath))
-	r.parsePackage(ctx, r.rootPackageName, types.PackageKind_ROOT, r.cfg.ResourcePath, r.cfg.ResourceData)
+	r.parsePackage(ctx, r.rootPackageName, types.PackageKind_ROOT, r.cfg.Path, r.cfg.ResourceData)
 	if r.recorder.Get().HasError() {
 		return
 	}
@@ -77,6 +77,7 @@ func (r *KformParser) Parse(ctx context.Context) {
 	r.validateUnreferencedProviderConfigs(ctx)
 	r.validateUnreferencedProviderRequirements(ctx)
 	r.validateProviderRequirements(ctx)
+	r.validateBackend(ctx)
 
 	// install providers
 	r.validateAndOrInstallProviders(ctx)

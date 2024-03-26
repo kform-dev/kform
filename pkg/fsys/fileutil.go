@@ -13,15 +13,6 @@ import (
 
 var ErrPathNoDirectory = errors.New("invalid path, path needs a specific directory")
 
-// ValidateDirPath validates if the filepath is a directory
-func ValidateDirPath(path string) error {
-	dir, _ := filepath.Split(path)
-	if dir == "" {
-		return ErrPathNoDirectory
-	}
-	return nil
-}
-
 func EnsureDir(ctx context.Context, elems ...string) error {
 	log := log.FromContext(ctx)
 	fp := filepath.Join(elems...)
@@ -38,4 +29,34 @@ func EnsureDir(ctx context.Context, elems ...string) error {
 		}
 	}
 	return nil
+}
+
+// NormalizeDir returns full absolute directory path of the
+// passed directory or an error. This function cleans up paths
+// such as current directory (.), relative directories (..), or
+// multiple separators.
+func NormalizeDir(dirPath string) (string, error) {
+	if !IsDir(dirPath) {
+		return "", fmt.Errorf("invalid directory argument: %s", dirPath)
+	}
+	return filepath.Abs(dirPath)
+}
+
+func IsDir(dir string) bool {
+	if f, err := os.Stat(dir); err == nil {
+		if f.IsDir() {
+			return true
+		}
+	}
+	return false
+}
+
+// fileExists returns true if a file at path already exists;
+// false otherwise.
+func FileExists(path string) bool {
+	f, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !f.IsDir()
 }

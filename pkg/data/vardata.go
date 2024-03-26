@@ -18,6 +18,7 @@ package data
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -74,12 +75,15 @@ func UpdateVarStore(ctx context.Context, varStore store.Storer[VarData], blockNa
 	if indexInt >= totalInt {
 		return fmt.Errorf("index cannot be bigger or equal to total index: %d, totol: %d", indexInt, totalInt)
 	}
+	var errm error
 	varStore.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, varData VarData) VarData {
 		if varData == nil {
 			varData = VarData{}
 		}
-		varData.Insert(DummyKey, totalInt, indexInt, data)
+		if err := varData.Insert(DummyKey, totalInt, indexInt, data); err != nil {
+			errors.Join(errm, err)
+		}
 		return varData
 	})
-	return nil
+	return errm
 }

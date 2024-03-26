@@ -54,14 +54,8 @@ type Block interface {
 }
 
 func NewBlock(ctx context.Context, blockType kformv1alpha1.BlockType, blockName string, rn *yaml.RNode) (*block, error) {
-	/*
-		d, err := getData(ctx, rn)
-		if err != nil {
-			return nil, err
-		}
-	*/
 	blockData := data.BlockData{} // initialize
-	blockData = blockData.Add(data.DummyKey, rn)
+	blockData = blockData.Add(rn)
 
 	return &block{
 		blockType:   blockType,
@@ -151,7 +145,7 @@ func (r *block) addData(ctx context.Context, rn *yaml.RNode) error {
 			return err
 		}
 	*/
-	r.data = r.data.Add(data.DummyKey, rn)
+	r.data = r.data.Add(rn)
 	return nil
 }
 

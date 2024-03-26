@@ -13,11 +13,8 @@ SHELL = /usr/bin/env bash -o pipefail
 
 
 .PHONY: generate
-generate: mdtogo controller-gen
-	rm -rf internal/docs/generated
-	mkdir -p internal/docs/generated
+generate: 
 	GOBIN=$(LOCALBIN) go generate ./...
-	go fmt ./internal/docs/generated/...
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
