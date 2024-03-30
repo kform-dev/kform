@@ -166,9 +166,7 @@ func TestBuildObjMap(t *testing.T) {
 				if diff := cmp.Diff(pkgInventory, tc.expectedPackageInventory[pkg]); diff != "" {
 					t.Errorf(diff)
 				}
-
 			}
-
 		})
 	}
 }

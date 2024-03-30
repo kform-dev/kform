@@ -106,8 +106,7 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 		r.recorder.Record(diag.DiagFromErr(err))
 		return
 	}
-	//var kf *kformv1alpha1.KformFile
-	//var kforms map[string]*fn.KubeObject
+	// we either can get the data from a directory reader or a memory
 	var kformDataStore store.Storer[*yaml.RNode]
 	if data != nil {
 		var err error
@@ -119,25 +118,8 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 			r.recorder.Record(diag.DiagFromErr(err))
 			return
 		}
-		/*
-			// this is seperated to make the input vars more flexible
-			kf, kforms, err = loader.KformMemoryLoader(ctx, resourceData, false) // no special input processing required
-			if err != nil {
-				r.recorder.Record(diag.DiagFromErr(err))
-				return
-			}
-		*/
-
 	} else {
 		var err error
-		// this is seperated to make the input vars more flexible
-		/*
-			kf, kforms, err = loader.KformDirLoader(ctx, resourcePath, false) // no special input processing required
-			if err != nil {
-				r.recorder.Record(diag.DiagFromErr(err))
-				return
-			}
-		*/
 		reader := pkgio.KformDirReader{
 			Path: path,
 		}

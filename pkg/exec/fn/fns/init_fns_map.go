@@ -46,8 +46,10 @@ type Config struct {
 	// hold the raw provider reference to the provider
 	// used for the provider DAG run only
 	Providers store.Storer[types.Provider]
+	// capture all the provider configs that got rendered
+	ProviderConfigs store.Storer[string]
 	// used to capture all resources applied by a given provider per package
-	PackageResources store.Storer[store.Storer[data.BlockData]]
+	Resources store.Storer[store.Storer[data.BlockData]]
 }
 
 func NewMap(ctx context.Context, cfg *Config) Map {

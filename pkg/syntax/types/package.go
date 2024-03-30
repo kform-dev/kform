@@ -261,7 +261,7 @@ func (r *Package) ListRawProvidersFromResources(ctx context.Context) sets.Set[st
 	providers := sets.New[string]()
 	for _, block := range ListBlocks(ctx, r.Blocks, ListBlockOptions{
 		ExludeOrphan: true,
-		PrefixExludes: []string{
+		PrefixExludes: []string{ // only search for resources
 			kformv1alpha1.BlockTYPE_INPUT.String(),
 			kformv1alpha1.BlockTYPE_OUTPUT.String(),
 			kformv1alpha1.BlockTYPE_LOCAL.String(),

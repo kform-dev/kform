@@ -25,6 +25,7 @@ func NewProviderFn(cfg *Config) fn.BlockInstanceRunner {
 		recorder:          cfg.Recorder,
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
+		providerConfigs:   cfg.ProviderConfigs,
 	}
 }
 
@@ -37,6 +38,7 @@ type provider struct {
 	recorder          recorder.Recorder[diag.Diagnostic]
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
+	providerConfigs   store.Storer[string]
 }
 
 func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
@@ -49,9 +51,15 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		return fmt.Errorf("cannot render config for %s", vctx.String())
 	}
 	// to interact with the provider we need a json byte
-	b, err := yaml.NewRNode(n).MarshalJSON()
+	rn := yaml.NewRNode(n)
+	b, err := rn.MarshalJSON()
 	if err != nil {
 		log.Error("cannot json marshal list", "error", err.Error())
+		return err
+	}
+	// store the config
+	if err := r.providerConfigs.Create(ctx, store.ToKey(vctx.BlockName), rn.MustString()); err != nil {
+		log.Error("cannot store provider config", "error", err.Error())
 		return err
 	}
 	log.Debug("providerConfig", "config", string(b))

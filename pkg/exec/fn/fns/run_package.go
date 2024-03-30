@@ -20,16 +20,19 @@ import (
 
 func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 	return &pkg{
+		kind:              cfg.Kind,
 		rootPackageName:   cfg.RootPackageName,
 		outputStore:       cfg.OutputStore,
 		recorder:          cfg.Recorder,
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
-		pkgResources:      cfg.PackageResources,
+		providerConfigs:   cfg.ProviderConfigs,
+		resources:         cfg.Resources,
 	}
 }
 
 type pkg struct {
+	kind DagRun
 	// initialized from the vertexContext
 	rootPackageName string
 	// dynamic injection required
@@ -37,7 +40,8 @@ type pkg struct {
 	recorder          recorder.Recorder[diag.Diagnostic]
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
-	pkgResources      store.Storer[store.Storer[data.BlockData]]
+	providerConfigs   store.Storer[string]
+	resources         store.Storer[store.Storer[data.BlockData]]
 }
 
 /*
@@ -61,7 +65,7 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	newOutputStore := memory.NewStore[data.BlockData]()
 	newVarStore := memory.NewStore[data.VarData]()
 	newPkgResourceStore := memory.NewStore[data.BlockData]()
-	r.pkgResources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
+	r.resources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
 
 	// localVars represent the dynamic input data into the package/mixin
 	// copy the data in the datastore
@@ -84,6 +88,7 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 		Name: vctx.BlockName,
 		From: dag.Root,
 		Handler: NewExecHandler(ctx, &Config{
+			Kind: r.kind,
 			// provider should not be set, since provider dag is not hierarchical
 			RootPackageName:   r.rootPackageName,
 			PackageName:       vctx.BlockName,
@@ -92,7 +97,8 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			Recorder:          r.recorder,
 			ProviderInstances: r.providerInstances,
 			Providers:         r.providers,
-			PackageResources:  r.pkgResources,
+			ProviderConfigs:   r.providerConfigs,
+			Resources:         r.resources,
 		}),
 	})
 	if err != nil {

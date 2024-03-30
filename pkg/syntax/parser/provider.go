@@ -92,13 +92,8 @@ func (r *KformParser) InitProviders(ctx context.Context) (store.Storer[types.Pro
 		return nil, err
 	}
 	for _, providerName := range rawProviders.UnsortedList() {
-		providerEnv := fmt.Sprintf("KFORM_PROVIDER_%s", strings.ToUpper(providerName))
-		providerExecPath, found := os.LookupEnv(providerEnv)
-		if !found {
-			return nil, fmt.Errorf("kform provider location has to be specified using env variable for now: %s", providerExecPath)
-		}
-		provider := types.Provider{}
-		if err := provider.Init(ctx, providerExecPath, providerName); err != nil {
+		provider, err := CreateProvider(ctx, providerName)
+		if err != nil {
 			return nil, err
 		}
 		providers.Create(ctx, store.ToKey(providerName), provider)
@@ -118,4 +113,18 @@ func (r *KformParser) GetEmptyProviderInstances(ctx context.Context) (store.Stor
 		providerInstances.Create(ctx, store.ToKey(providerConfigName), nil)
 	}
 	return providerInstances, nil
+}
+
+func CreateProvider(ctx context.Context, providerName string) (types.Provider, error) {
+	provider := types.Provider{}
+	providerEnv := fmt.Sprintf("KFORM_PROVIDER_%s", strings.ToUpper(providerName))
+	providerExecPath, found := os.LookupEnv(providerEnv)
+	if !found {
+		return provider, fmt.Errorf("kform provider location has to be specified using env variable for now: %s", providerExecPath)
+	}
+
+	if err := provider.Init(ctx, providerExecPath, providerName); err != nil {
+		return provider, err
+	}
+	return provider, nil
 }

@@ -3,7 +3,9 @@ package client
 import (
 	"context"
 
+	"github.com/henderiw/store"
 	invv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
+	"github.com/kform-dev/kform/pkg/data"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -12,7 +14,7 @@ import (
 // operations.
 type Storage interface {
 	// GetObject returns the object that stores the inventory
-	GetObject() (*unstructured.Unstructured, error)
+	GetObject(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) (*unstructured.Unstructured, error)
 	// Load retrieves the set of object metadata from the inventory object
 	Load(ctx context.Context) (*invv1alpha1.Inventory, error)
 	// Store the set of object metadata in the inventory object. This will

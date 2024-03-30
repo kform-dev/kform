@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/henderiw/store"
-	memstore "github.com/henderiw/store/memory"
 	invv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
+	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/inventory/client"
 	"github.com/kform-dev/kform/pkg/inventory/config"
 	"github.com/kform-dev/kform/pkg/inventory/policy"
@@ -15,7 +15,8 @@ import (
 )
 
 type Manager interface {
-	Apply(ctx context.Context) error
+	GetInventory(ctx context.Context) (*invv1alpha1.Inventory, error)
+	Apply(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) error
 	// AddProvider
 	// AddPackage
 	// AddResource
@@ -50,11 +51,7 @@ func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.
 		client:         client,
 		localInventory: localInventory,
 		//invStorage:        invStore,
-		strategy:          strategy,
-		storedProviders:   memstore.NewStore[string](),
-		storedPackages:    memstore.NewStore[store.Storer[invv1alpha1.Object]](),
-		actuatedProviders: memstore.NewStore[string](),
-		actuatedPackages:  memstore.NewStore[store.Storer[invv1alpha1.Object]](),
+		strategy: strategy,
 	}
 
 	/*
@@ -83,19 +80,15 @@ func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.
 }
 
 type manager struct {
-	client            client.Client
-	localInventory    *unstructured.Unstructured
-	strategy          invv1alpha1.ActuationStrategy
-	storedProviders   store.Storer[string] // string ia a yamlString
-	storedPackages    store.Storer[store.Storer[invv1alpha1.Object]]
-	actuatedProviders store.Storer[string] // string ia a yamlString
-	actuatedPackages  store.Storer[store.Storer[invv1alpha1.Object]]
+	client         client.Client
+	localInventory *unstructured.Unstructured
+	strategy       invv1alpha1.ActuationStrategy
 }
 
-func (r *manager) Apply(ctx context.Context) error {
+func (r *manager) Apply(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) error {
 	// wrap the local inventory as a way to retrieve the inventory
 	invStore := client.WrapInventoryObj(r.localInventory)
-	inv, err := invStore.GetObject()
+	inv, err := invStore.GetObject(ctx, providers, newActuatedResources)
 	if err != nil {
 		return err
 	}

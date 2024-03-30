@@ -26,7 +26,7 @@ func NewResourceFn(cfg *Config) fn.BlockInstanceRunner {
 		varStore:          cfg.VarStore,
 		outputStore:       cfg.OutputStore,
 		providerInstances: cfg.ProviderInstances,
-		pkgResources:      cfg.PackageResources,
+		resources:         cfg.Resources,
 	}
 }
 
@@ -36,7 +36,7 @@ type resource struct {
 	varStore          store.Storer[data.VarData]
 	outputStore       store.Storer[data.BlockData]
 	providerInstances store.Storer[plugin.Provider]
-	pkgResources      store.Storer[store.Storer[data.BlockData]]
+	resources         store.Storer[store.Storer[data.BlockData]]
 }
 
 func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars map[string]any) error {
@@ -142,7 +142,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		if vctx.BlockType == kformv1alpha1.BlockTYPE_RESOURCE ||
 			(r.kind == DagRunInventory && vctx.BlockType == kformv1alpha1.BlockTYPE_DATA) {
 			// get the pkgStore in which we store the resources actuated per package
-			pkgStore, err := r.pkgResources.Get(ctx, store.ToKey(r.rootPackageName))
+			pkgStore, err := r.resources.Get(ctx, store.ToKey(r.rootPackageName))
 			if err != nil {
 				return err
 			}

@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/henderiw/logger/log"
+	"github.com/henderiw/store"
 	invv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
+	"github.com/kform-dev/kform/pkg/data"
 	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -98,18 +100,35 @@ func (r *ConfigMap) Load(ctx context.Context) (*invv1alpha1.Inventory, error) {
 
 // GetObject returns the wrapped object (ConfigMap) as a resource.Info
 // or an error if one occurs.
-func (icm *ConfigMap) GetObject() (*unstructured.Unstructured, error) {
-	// Create the objMap of all the resources, and compute the hash.
-	//objMap := buildObjMap(icm.objMetas, icm.objStatus)
+func (r *ConfigMap) GetObject(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) (*unstructured.Unstructured, error) {
+	// Create the dataMap of all the providers and resources
+	dataMap, err := buildDataMap(ctx, providers, newActuatedResources)
+	if err != nil {
+		return nil, err
+	}
 	// Create the inventory object by copying the template.
-	invCopy := icm.inv.DeepCopy()
+	invCopy := r.inv.DeepCopy()
 	// Adds the inventory map to the ConfigMap "data" section.
-	/*
-		err := unstructured.SetNestedStringMap(invCopy.UnstructuredContent(),
-			objMap, "data")
-		if err != nil {
-			return nil, err
-		}
-	*/
+	if err := unstructured.SetNestedStringMap(invCopy.UnstructuredContent(),
+		dataMap, "data"); err != nil {
+		return nil, err
+	}
+
 	return invCopy, nil
+}
+
+func buildDataMap(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) (map[string]string, error) {
+	dataMap := map[string]string{}
+	providerByte, err := invv1alpha1.MarshalProviders(providers)
+	if err != nil {
+		return dataMap, err
+	}
+	dataMap["providers"] = string(providerByte)
+	packageByte, err := invv1alpha1.MarshalPackages(ctx, newActuatedResources)
+	if err != nil {
+		return dataMap, err
+	}
+	dataMap["packages"] = string(packageByte)
+
+	return dataMap, err
 }
