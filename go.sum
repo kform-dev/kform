@@ -136,8 +136,8 @@ github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 h1:+ngKgrYPPJrOjhax5N+uePQ0Fh1Z7PheYoUI/0nzkPA=
 github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
-github.com/henderiw-nephio/kform v0.0.2-0.20240315082358-cfbbc51f667e h1:59sZWJDYw3TE4zEk0iYDEwu1rywZBcFPpcR7fhUuczA=
-github.com/henderiw-nephio/kform v0.0.2-0.20240315082358-cfbbc51f667e/go.mod h1:Ba/r5K7wtXaU9fqAGIJ7Q0KGpM5+vA0wTR4ExvXlsqo=
+github.com/henderiw-nephio/kform v0.0.3-0.20231122120427-bba8439876bb h1:YCks/kp6CGEP+u97RybNXNvyrcbI80tHWWIgfj/K6jA=
+github.com/henderiw-nephio/kform v0.0.3-0.20231122120427-bba8439876bb/go.mod h1:Niz6ddFzxOLfCcyLOH8becPgX8P69kkN5SM2VtDfSeU=
 github.com/henderiw/apiserver-builder v0.0.2-0.20240222151136-8b4cddd205c5 h1:4ZJJShBo1yNgb1RwZ0LAO1VIbO9BwmVbD2f59kcqU30=
 github.com/henderiw/apiserver-builder v0.0.2-0.20240222151136-8b4cddd205c5/go.mod h1:InXP3QZgZQodpCgN5KYTwYUWaSxKD+1EEo8Xp+V6dRo=
 github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe h1:+R53KH7fW+pmqlfSYVTCGPn8pj6gqBGcQ0nq7L1h8+g=

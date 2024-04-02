@@ -3,12 +3,14 @@ package runner
 import (
 	"context"
 	"fmt"
+	"os/exec"
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn/fns"
+	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/inventory/manager"
 	"github.com/kform-dev/kform/pkg/pkgio"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -27,6 +29,7 @@ type Config struct {
 	OutputData   store.Storer[[]byte]
 	Path         string               // path of the kform files
 	ResourceData store.Storer[[]byte] // this providers resource externally w/o having to parse from a filepath
+	DryRun       bool
 }
 
 func NewKformRunner(cfg *Config) Runner {
@@ -36,7 +39,7 @@ func NewKformRunner(cfg *Config) Runner {
 }
 
 type runner struct {
-	cfg *Config
+	cfg        *Config
 	outputSink pkgio.OutputSink
 	invManager manager.Manager
 }
@@ -45,7 +48,23 @@ func (r *runner) Run(ctx context.Context) error {
 	log := log.FromContext(ctx)
 	log.Debug("run")
 
-	var err error
+	invDir, err := fsys.CreateTempDirectory("INV")
+	if err != nil {
+		return err
+	}
+	fmt.Println("invDir", invDir.Name())
+	defer func() {
+		//invDir.Delete()
+	}()
+	newDir, err := fsys.CreateTempDirectory("NEW")
+	if err != nil {
+		return err
+	}
+	fmt.Println("newDir", newDir.Name())
+	defer func() {
+		//newDir.Delete()
+	}()
+
 	r.invManager, err = manager.New(ctx, r.cfg.Path, r.cfg.Factory, kformv1alpha1.ActuationStrategyApply)
 	if err != nil {
 		return err
@@ -61,7 +80,14 @@ func (r *runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	invkformCtx := newKformContext(fns.DagRunInventory, r.cfg.PackageName, r.cfg.Path, invResources)
+	invkformCtx := newKformContext(&KformConfig{
+		Kind:         fns.DagRunInventory,
+		PkgName:      r.cfg.PackageName,
+		Path:         r.cfg.Path,
+		ResourceData: invResources,
+		DryRun:       r.cfg.DryRun,
+		TmpDir:       invDir, // directory where tmp inventory information is stored
+	})
 	if err := invkformCtx.ParseAndRun(ctx, map[string]any{}); err != nil {
 		return err
 	}
@@ -79,7 +105,14 @@ func (r *runner) Run(ctx context.Context) error {
 		return err
 	}
 
-	kformCtx := newKformContext(fns.DagRunRegular, r.cfg.PackageName, r.cfg.Path, nil)
+	kformCtx := newKformContext(&KformConfig{
+		Kind:         fns.DagRunRegular,
+		PkgName:      r.cfg.PackageName,
+		Path:         r.cfg.Path,
+		ResourceData: nil,
+		DryRun:       r.cfg.DryRun,
+		TmpDir:       newDir,
+	})
 	if err := kformCtx.ParseAndRun(ctx, inputVars); err != nil {
 		return err
 	}
@@ -87,10 +120,27 @@ func (r *runner) Run(ctx context.Context) error {
 	outputStore := kformCtx.getOutputStore()
 	providers := kformCtx.getProviders(ctx)
 	newActuatedResources := kformCtx.getResources()
-	listPackageResources(ctx, "new", newActuatedResources)
+	//listPackageResources(ctx, "new", newActuatedResources)
 
 	if err := r.invManager.Apply(ctx, providers, newActuatedResources); err != nil {
 		return err
+	}
+
+	if r.cfg.DryRun {
+		args := []string{"-u", "-N", invDir.Path, newDir.Path}
+		fmt.Println("args", args)
+		cmd := exec.Command("diff", args...)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			exitCode := cmd.ProcessState.ExitCode()
+			// existCode 0, no diff
+			// exitCode 1, diff
+			if exitCode > 1 && err != nil {
+				fmt.Printf("Command failed with exit code %d\n", exitCode)
+				return err
+			}
+		}
+		fmt.Println(string(out))
 	}
 
 	w := pkgio.KformWriter{

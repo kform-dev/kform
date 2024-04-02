@@ -42,10 +42,19 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 		return err
 	}
 	rn := yaml.NewRNode(n)
+	/*
+		var v *unstructured.Unstructured
+		if err := yaml.Unmarshal([]byte(rn.MustString()), &v); err != nil {
+			log.Error("cannot unmarshal resp", "error", err.Error())
+			return err
+		}
+	*/
+
 	var v map[string]any
 	if err := yaml.Unmarshal([]byte(rn.MustString()), &v); err != nil {
 		return err
 	}
+
 	if err := data.UpdateVarStore(ctx, r.varStore, vctx.BlockName, v, localVars); err != nil {
 		return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 	}

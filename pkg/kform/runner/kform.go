@@ -11,18 +11,25 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn/fns"
+	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/parser"
 	"github.com/kform-dev/kform/pkg/syntax/types"
 )
 
-func newKformContext(kind fns.DagRun, pkgName, path string, resourceData store.Storer[[]byte]) *kformContext {
+type KformConfig struct {
+	Kind         fns.DagRun
+	PkgName      string
+	Path         string
+	ResourceData store.Storer[[]byte]
+	DryRun       bool
+	TmpDir       *fsys.Directory
+}
+
+func newKformContext(cfg *KformConfig) *kformContext {
 	return &kformContext{
-		kind:            kind,
-		pkgName:         pkgName,
-		path:            path,
-		resourceData:    resourceData,
+		cfg:             cfg,
 		outputStore:     memory.NewStore[data.BlockData](),
 		resourcesStore:  memory.NewStore[store.Storer[data.BlockData]](),
 		providerConfigs: memory.NewStore[string](),
@@ -30,10 +37,7 @@ func newKformContext(kind fns.DagRun, pkgName, path string, resourceData store.S
 }
 
 type kformContext struct {
-	kind              fns.DagRun
-	pkgName           string
-	path              string
-	resourceData      store.Storer[[]byte]
+	cfg               *KformConfig
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
@@ -49,9 +53,9 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 	// syntax check config -> build the dag
 	log.Debug("parsing packages")
 	parser, err := parser.NewKformParser(ctx, &parser.Config{
-		PackageName:  r.pkgName,
-		Path:         r.path,
-		ResourceData: r.resourceData,
+		PackageName:  r.cfg.PkgName,
+		Path:         r.cfg.Path,
+		ResourceData: r.cfg.ResourceData,
 	})
 	if err != nil {
 		return err
@@ -105,7 +109,7 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 	defer cancel()
 	errCh := make(chan error, 1)
 	// run go routine
-	go r.runKformDAG(ctx, errCh, rootPackage, inputVars)
+	go r.runKformDAG(ctx, errCh, rootPackage, inputVars, r.cfg.DryRun, r.cfg.TmpDir)
 	// wait for kform dag to finish
 	err = <-errCh
 	if err != nil {
@@ -150,7 +154,7 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 	})
 	log.Debug("executing provider runner DAG")
 	if err := rmfn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.path, "provider"),
+		FileName:    filepath.Join(r.cfg.Path, "provider"),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,
@@ -163,25 +167,27 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 	return nil
 }
 
-func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any) {
+func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any, dryRun bool, tmpDir *fsys.Directory) {
 	log := log.FromContext(ctx)
 	defer close(errCh)
 
 	runRecorder := recorder.New[diag.Diagnostic]()
 
 	cmdPackageFn := fns.NewPackageFn(&fns.Config{
-		Kind:              r.kind,
+		Kind:              r.cfg.Kind,
 		RootPackageName:   rootPackage.Name,
 		OutputStore:       r.outputStore,
 		Recorder:          runRecorder,
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
 		Resources:         r.resourcesStore,
+		DryRun:            dryRun,
+		TmpDir:            tmpDir,
 	})
 
 	log.Debug("executing package")
 	if err := cmdPackageFn.Run(ctx, &types.VertexContext{
-		FileName:    filepath.Join(r.path, "provider"),
+		FileName:    filepath.Join(r.cfg.Path, "provider"),
 		PackageName: rootPackage.Name,
 		BlockType:   kformv1alpha1.BlockTYPE_PACKAGE,
 		BlockName:   rootPackage.Name,

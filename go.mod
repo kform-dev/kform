@@ -2,8 +2,6 @@ module github.com/kform-dev/kform
 
 go 1.21.4
 
-replace github.com/henderiw-nephio/kform => github.com/henderiw-nephio/kform v0.0.2-0.20240315082358-cfbbc51f667e
-
 replace github.com/google/cel-go => github.com/google/cel-go v0.16.1
 
 replace k8s.io/client-go => k8s.io/client-go v0.28.6
@@ -45,6 +43,7 @@ require (
 	k8s.io/cli-runtime v0.29.3
 	k8s.io/client-go v0.29.3
 	k8s.io/kubectl v0.28.8
+	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 	sigs.k8s.io/cli-utils v0.35.0
 	sigs.k8s.io/kustomize/kyaml v0.15.0
 	sigs.k8s.io/yaml v1.4.0
@@ -148,7 +147,6 @@ require (
 	k8s.io/component-base v0.29.3 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
-	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect

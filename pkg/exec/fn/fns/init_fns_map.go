@@ -11,6 +11,7 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn"
+	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/types"
@@ -50,6 +51,8 @@ type Config struct {
 	ProviderConfigs store.Storer[string]
 	// used to capture all resources applied by a given provider per package
 	Resources store.Storer[store.Storer[data.BlockData]]
+	DryRun    bool
+	TmpDir    *fsys.Directory
 }
 
 func NewMap(ctx context.Context, cfg *Config) Map {

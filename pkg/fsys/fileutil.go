@@ -11,6 +11,8 @@ import (
 	"github.com/henderiw/logger/log"
 )
 
+//const tmpKformDirPrefix = "kform-diff"
+
 var ErrPathNoDirectory = errors.New("invalid path, path needs a specific directory")
 
 func EnsureDir(ctx context.Context, elems ...string) error {
@@ -42,8 +44,10 @@ func NormalizeDir(dirPath string) (string, error) {
 	return filepath.Abs(dirPath)
 }
 
-func IsDir(dir string) bool {
-	if f, err := os.Stat(dir); err == nil {
+// IsDir returns true if path represents a directory in the fileSystem
+// otherwise false is returned
+func IsDir(path string) bool {
+	if f, err := os.Stat(path); err == nil {
 		if f.IsDir() {
 			return true
 		}
@@ -59,4 +63,37 @@ func FileExists(path string) bool {
 		return false
 	}
 	return !f.IsDir()
+}
+
+// Directory creates a new temp directory, in which files get created.
+type Directory struct {
+	Path string
+}
+
+// CreateDirectory does create the actual disk directory, and return a
+// new representation of it.
+func CreateTempDirectory(prefix string) (*Directory, error) {
+	path, err := os.MkdirTemp("", prefix+"-")
+	if err != nil {
+		return nil, err
+	}
+
+	return &Directory{
+		Path: path,
+	}, nil
+}
+
+// NewFile creates a new file in the directory.
+func (r *Directory) NewFile(name string) (*os.File, error) {
+	return os.OpenFile(filepath.Join(r.Path, name), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
+}
+
+// Delete removes the directory recursively.
+func (r *Directory) Delete() error {
+	return os.RemoveAll(r.Path)
+}
+
+// Delete removes the directory recursively.
+func (r *Directory) Name() string {
+	return r.Path
 }

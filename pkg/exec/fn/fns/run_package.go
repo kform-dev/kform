@@ -13,6 +13,7 @@ import (
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/executor"
 	"github.com/kform-dev/kform/pkg/exec/fn"
+	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/types"
@@ -28,6 +29,8 @@ func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 		providerInstances: cfg.ProviderInstances,
 		providerConfigs:   cfg.ProviderConfigs,
 		resources:         cfg.Resources,
+		dryRun:            cfg.DryRun,
+		tmpDir:            cfg.TmpDir,
 	}
 }
 
@@ -42,6 +45,8 @@ type pkg struct {
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
 	resources         store.Storer[store.Storer[data.BlockData]]
+	dryRun            bool
+	tmpDir            *fsys.Directory
 }
 
 /*
@@ -99,6 +104,8 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			Providers:         r.providers,
 			ProviderConfigs:   r.providerConfigs,
 			Resources:         r.resources,
+			DryRun:            r.dryRun,
+			TmpDir:            r.tmpDir,
 		}),
 	})
 	if err != nil {

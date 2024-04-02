@@ -39,6 +39,8 @@ func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
 			Providers:         cfg.Providers,
 			ProviderConfigs:   cfg.ProviderConfigs,
 			Resources:         cfg.Resources,
+			DryRun:            cfg.DryRun,
+			TmpDir:            cfg.TmpDir,
 		}),
 	}
 }
