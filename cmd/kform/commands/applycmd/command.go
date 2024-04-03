@@ -4,8 +4,8 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/kform-dev/kform/pkg/exec/kform/runner"
 	"github.com/kform-dev/kform/pkg/fsys"
-	"github.com/kform-dev/kform/pkg/kform/runner"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -33,6 +33,7 @@ func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericcliop
 	r.Command = cmd
 
 	r.Command.Flags().BoolVar(&r.AutoApprove, "auto-approve", false, "skip interactive approval of plan before applying")
+	r.Command.Flags().BoolVar(&r.DryRun, "dry-run", false, "executes a speculative execution plan, without applying the resources")
 	r.Command.Flags().StringVarP(&r.Input, "in", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
 	r.Command.Flags().StringVarP(&r.Output, "out", "o", "", "a file or directory where the result is stored, a filename creates a single yaml doc; a dir creates seperated yaml files")
 
@@ -43,6 +44,7 @@ type Runner struct {
 	Command     *cobra.Command
 	Factory     util.Factory
 	AutoApprove bool
+	DryRun      bool
 	Input       string
 	Output      string
 }
@@ -62,6 +64,8 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		Input:       r.Input,
 		Output:      r.Output,
 		Path:        path,
+		DryRun:      r.DryRun,
+		AutoApprove: r.AutoApprove,
 	})
 
 	return kfrunner.Run(ctx)

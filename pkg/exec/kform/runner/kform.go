@@ -25,14 +25,16 @@ type KformConfig struct {
 	ResourceData store.Storer[[]byte]
 	DryRun       bool
 	TmpDir       *fsys.Directory
+	Destroy      bool
 }
 
-func newKformContext(cfg *KformConfig) *kformContext {
+func newKformContext(cfg *KformConfig, actResourcesStore store.Storer[store.Storer[data.BlockData]]) *kformContext {
 	return &kformContext{
-		cfg:             cfg,
-		outputStore:     memory.NewStore[data.BlockData](),
-		resourcesStore:  memory.NewStore[store.Storer[data.BlockData]](),
-		providerConfigs: memory.NewStore[string](),
+		cfg:               cfg,
+		outputStore:       memory.NewStore[data.BlockData](),
+		newResourcesStore: memory.NewStore[store.Storer[data.BlockData]](),
+		actResourcesStore: actResourcesStore,
+		providerConfigs:   memory.NewStore[string](),
 	}
 }
 
@@ -42,7 +44,8 @@ type kformContext struct {
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
 	outputStore       store.Storer[data.BlockData]
-	resourcesStore    store.Storer[store.Storer[data.BlockData]]
+	newResourcesStore store.Storer[store.Storer[data.BlockData]]
+	actResourcesStore store.Storer[store.Storer[data.BlockData]]
 }
 
 func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any) error {
@@ -109,7 +112,7 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 	defer cancel()
 	errCh := make(chan error, 1)
 	// run go routine
-	go r.runKformDAG(ctx, errCh, rootPackage, inputVars, r.cfg.DryRun, r.cfg.TmpDir)
+	go r.runKformDAG(ctx, errCh, rootPackage, inputVars)
 	// wait for kform dag to finish
 	err = <-errCh
 	if err != nil {
@@ -122,8 +125,12 @@ func (r *kformContext) getOutputStore() store.Storer[data.BlockData] {
 	return r.outputStore
 }
 
-func (r *kformContext) getResources() store.Storer[store.Storer[data.BlockData]] {
-	return r.resourcesStore
+func (r *kformContext) getNewResources() store.Storer[store.Storer[data.BlockData]] {
+	return r.newResourcesStore
+}
+
+func (r *kformContext) getActResources() store.Storer[store.Storer[data.BlockData]] {
+	return r.actResourcesStore
 }
 
 func (r *kformContext) getProviders(ctx context.Context) map[string]string {
@@ -150,7 +157,6 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
 		ProviderConfigs:   r.providerConfigs,
-		Resources:         memory.NewStore[store.Storer[data.BlockData]](), // dummy init
 	})
 	log.Debug("executing provider runner DAG")
 	if err := rmfn.Run(ctx, &types.VertexContext{
@@ -167,7 +173,7 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 	return nil
 }
 
-func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any, dryRun bool, tmpDir *fsys.Directory) {
+func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPackage *types.Package, inputVars map[string]any) {
 	log := log.FromContext(ctx)
 	defer close(errCh)
 
@@ -180,9 +186,11 @@ func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPa
 		Recorder:          runRecorder,
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
-		Resources:         r.resourcesStore,
-		DryRun:            dryRun,
-		TmpDir:            tmpDir,
+		NewResources:      r.newResourcesStore,
+		ActResources:      r.actResourcesStore,
+		DryRun:            r.cfg.DryRun,
+		TmpDir:            r.cfg.TmpDir,
+		Destroy:           r.cfg.Destroy,
 	})
 
 	log.Debug("executing package")

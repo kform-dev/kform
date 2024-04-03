@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 
 	"github.com/henderiw/logger/log"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 //const tmpKformDirPrefix = "kform-diff"
@@ -96,4 +100,39 @@ func (r *Directory) Delete() error {
 // Delete removes the directory recursively.
 func (r *Directory) Name() string {
 	return r.Path
+}
+
+// Print prints the object using the printer into a new file in the directory.
+func (r *Directory) Print(fileName string, obj runtime.Object) error {
+	a, err := meta.Accessor(obj)
+	if err != nil {
+		// The object is not a `metav1.Object`, ignore it.
+		return err
+	}
+	a.SetManagedFields(nil)
+
+	f, err := r.NewFile(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return (&Printer{}).Print(f, obj)
+}
+
+func GetFileName(rn *yaml.RNode) (string, error) {
+	gv, err := schema.ParseGroupVersion(rn.GetApiVersion())
+	if err != nil {
+		return "", err
+	}
+	group := ""
+	if gv.Group != "" {
+		group = fmt.Sprintf("%v.", gv.Group)
+	}
+	return group + fmt.Sprintf(
+		"%v.%v.%v.%v",
+		gv.Version,
+		rn.GetKind(),
+		rn.GetNamespace(),
+		rn.GetName(),
+	), nil
 }

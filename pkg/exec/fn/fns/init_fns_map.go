@@ -50,9 +50,12 @@ type Config struct {
 	// capture all the provider configs that got rendered
 	ProviderConfigs store.Storer[string]
 	// used to capture all resources applied by a given provider per package
-	Resources store.Storer[store.Storer[data.BlockData]]
-	DryRun    bool
-	TmpDir    *fsys.Directory
+	NewResources store.Storer[store.Storer[data.BlockData]]
+	// used to delete all resources
+	ActResources store.Storer[store.Storer[data.BlockData]]
+	DryRun       bool
+	TmpDir       *fsys.Directory
+	Destroy      bool
 }
 
 func NewMap(ctx context.Context, cfg *Config) Map {

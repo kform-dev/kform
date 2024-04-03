@@ -97,8 +97,8 @@ func (r *resource) UpdatePackage(ctx context.Context) {
 		}
 		return
 	}
-	// augment the data with additional resources, for inventory read this is needed
-	if blockType != kformv1alpha1.BlockTYPE_DATA {
+	// augment the data with additional resources, for inventory read/delete this is needed
+	if blockType == kformv1alpha1.BlockTYPE_LIST {
 		// duplicate resources
 		r.recorder.Record(diag.DiagFromErrWithContext(
 			Context{ctx}.String(),

@@ -179,7 +179,7 @@ func getAttributes(ctx context.Context, blockType kformv1alpha1.BlockType, rn *y
 	if blockType == kformv1alpha1.BlockTYPE_RESOURCE ||
 		blockType == kformv1alpha1.BlockTYPE_DATA ||
 		blockType == kformv1alpha1.BlockTYPE_LIST {
-		provider = strings.Split(resourceType, "_")[0]
+		provider = strings.SplitN(resourceType, "_", 2)[0]
 		if annotations[kformv1alpha1.KformAnnotationKey_PROVIDER] != "" {
 			provider = annotations[kformv1alpha1.KformAnnotationKey_PROVIDER]
 		}

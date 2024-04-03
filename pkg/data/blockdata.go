@@ -15,7 +15,7 @@ import (
 type BlockData []*yaml.RNode
 
 // Insert inserts data in the blockdata if you know the position
-func (r BlockData) Insert(total, pos int, data *yaml.RNode) (BlockData, error) {
+func (r BlockData) Insert(total, pos int, rn *yaml.RNode) (BlockData, error) {
 	if len(r) != total {
 		r = make([]*yaml.RNode, total)
 	}
@@ -25,8 +25,21 @@ func (r BlockData) Insert(total, pos int, data *yaml.RNode) (BlockData, error) {
 		// Should never happen
 		return r, fmt.Errorf("pos is not within boundaries, pos %d, total %d", pos, total)
 	}
-	r[pos] = data
+	r[pos] = rn
 
+	return r, nil
+}
+
+// Insert inserts data in the blockdata if you know the position
+func (r BlockData) Delete(rnode *yaml.RNode) (BlockData, error) {
+	if len(r) == 0 {
+		return r, nil
+	}
+	for i, rn := range r {
+		if rn.GetNamespace() == rnode.GetNamespace() && rn.GetName() == rnode.GetName() {
+			return append(r[:i], r[i+1:]...), nil
+		}
+	}
 	return r, nil
 }
 
@@ -61,7 +74,7 @@ func (r BlockData) GetVarData() (VarData, error) {
 
 // Updates the results in the store; for loop vars it uses the index of the loop var to store the result
 // since we store the results of a given blockName in a slice []any
-func UpdateBlockStore(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, data *yaml.RNode, localVars map[string]any) error {
+func UpdateBlockStoreEntry(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, rn *yaml.RNode, localVars map[string]any) error {
 	total, ok := localVars[kformv1alpha1.LoopKeyItemsTotal]
 	if !ok {
 		total = 1
@@ -87,7 +100,23 @@ func UpdateBlockStore(ctx context.Context, storeInstance store.Storer[BlockData]
 		if blockData == nil {
 			blockData = BlockData{}
 		}
-		blockData, err := blockData.Insert(totalInt, indexInt, data)
+		blockData, err := blockData.Insert(totalInt, indexInt, rn)
+		if err != nil {
+			errors.Join(errm, err)
+		}
+		return blockData
+	})
+	return errm
+}
+
+// Delete the block
+func DeleteBlockStoreEntry(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, rn *yaml.RNode) error {
+	var errm error
+	storeInstance.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockData BlockData) BlockData {
+		if blockData == nil {
+			return blockData
+		}
+		blockData, err := blockData.Delete(rn)
 		if err != nil {
 			errors.Join(errm, err)
 		}

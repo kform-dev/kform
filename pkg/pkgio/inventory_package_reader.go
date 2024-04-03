@@ -1,5 +1,6 @@
 package pkgio
 
+/*
 import (
 	"context"
 	"fmt"
@@ -32,3 +33,4 @@ func (r *InventoryPackageReader) Read(ctx context.Context, pkgResources map[stri
 	}
 	return datastore, nil
 }
+*/

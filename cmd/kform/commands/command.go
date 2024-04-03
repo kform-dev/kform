@@ -10,6 +10,7 @@ import (
 
 	"github.com/henderiw/logger/log"
 	"github.com/kform-dev/kform/cmd/kform/commands/applycmd"
+	"github.com/kform-dev/kform/cmd/kform/commands/destroycmd"
 	"github.com/kform-dev/kform/cmd/kform/commands/initcmd"
 	"github.com/kform-dev/kform/cmd/kform/commands/plancmd"
 	"github.com/kform-dev/kform/cmd/kform/globals"
@@ -72,9 +73,10 @@ func GetMain(ctx context.Context) *cobra.Command {
 	}
 
 	subCmds := map[string]*cobra.Command{
-		"init":  initcmd.NewCommand(ctx, ioStreams),
-		"apply": applycmd.NewCommand(ctx, f, ioStreams),
-		"plan":  plancmd.NewCommand(ctx, f, ioStreams),
+		"init":    initcmd.NewCommand(ctx, ioStreams),
+		"apply":   applycmd.NewCommand(ctx, f, ioStreams),
+		"destroy": destroycmd.NewCommand(ctx, f, ioStreams),
+		"plan":    plancmd.NewCommand(ctx, f, ioStreams),
 	}
 
 	for _, subCmd := range subCmds {

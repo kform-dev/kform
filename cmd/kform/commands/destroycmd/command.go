@@ -1,4 +1,4 @@
-package plancmd
+package destroycmd
 
 import (
 	"context"
@@ -22,7 +22,7 @@ func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericcliop
 		Factory: factory,
 	}
 	cmd := &cobra.Command{
-		Use:  "plan (DIRECTORY | STDIN) [flags]",
+		Use:  "destroy (DIRECTORY | STDIN) [flags]",
 		Args: cobra.ExactArgs(1),
 		//Short:   docs.ApplyShort,
 		//Long:    docs.ApplyShort + "\n" + docs.ApplyLong,
@@ -32,7 +32,8 @@ func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericcliop
 
 	r.Command = cmd
 
-	r.Command.Flags().BoolVar(&r.Destroy, "destroy", false, "destroys resources managed by this plan")
+	r.Command.Flags().BoolVar(&r.AutoApprove, "auto-approve", false, "skip interactive approval of plan before destroying")
+	r.Command.Flags().BoolVar(&r.DryRun, "dry-run", false, "executes a speculative execution plan, without destroying the resources")
 	r.Command.Flags().StringVarP(&r.Input, "in", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
 	r.Command.Flags().StringVarP(&r.Output, "out", "o", "", "a file or directory where the result is stored, a filename creates a single yaml doc; a dir creates seperated yaml files")
 
@@ -43,7 +44,7 @@ type Runner struct {
 	Command     *cobra.Command
 	Factory     util.Factory
 	AutoApprove bool
-	Destroy     bool
+	DryRun      bool
 	Input       string
 	Output      string
 }
@@ -63,8 +64,9 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		Input:       r.Input,
 		Output:      r.Output,
 		Path:        path,
-		DryRun:      true,
-		Destroy:     r.Destroy,
+		Destroy:     true,
+		AutoApprove: r.AutoApprove,
+		DryRun:      r.DryRun,
 	})
 
 	return kfrunner.Run(ctx)

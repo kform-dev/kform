@@ -64,7 +64,7 @@ func (r *localOrOutput) Run(ctx context.Context, vctx *types.VertexContext, loca
 		annotations[kformv1alpha1.KformAnnotationKey_PATH] = vctx.FileName
 		annotations[kformv1alpha1.KformAnnotationKey_INDEX] = vctx.Index
 		rn.SetAnnotations(annotations)
-		if err := data.UpdateBlockStore(ctx, r.outputStore, vctx.BlockName, rn, localVars); err != nil {
+		if err := data.UpdateBlockStoreEntry(ctx, r.outputStore, vctx.BlockName, rn, localVars); err != nil {
 			return err
 		}
 	}

@@ -28,9 +28,11 @@ func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
 		providerConfigs:   cfg.ProviderConfigs,
-		resources:         cfg.Resources,
+		newResources:      cfg.NewResources,
+		actResources:      cfg.ActResources,
 		dryRun:            cfg.DryRun,
 		tmpDir:            cfg.TmpDir,
+		destroy:           cfg.Destroy,
 	}
 }
 
@@ -44,9 +46,11 @@ type pkg struct {
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
-	resources         store.Storer[store.Storer[data.BlockData]]
+	newResources      store.Storer[store.Storer[data.BlockData]]
+	actResources      store.Storer[store.Storer[data.BlockData]]
 	dryRun            bool
 	tmpDir            *fsys.Directory
+	destroy           bool
 }
 
 /*
@@ -70,7 +74,11 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	newOutputStore := memory.NewStore[data.BlockData]()
 	newVarStore := memory.NewStore[data.VarData]()
 	newPkgResourceStore := memory.NewStore[data.BlockData]()
-	r.resources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
+	if r.newResources != nil {
+		// protection such that kform runs who dont request resources will not crash
+		// e.g. a provider run
+		r.newResources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
+	}
 
 	// localVars represent the dynamic input data into the package/mixin
 	// copy the data in the datastore
@@ -103,9 +111,11 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			ProviderInstances: r.providerInstances,
 			Providers:         r.providers,
 			ProviderConfigs:   r.providerConfigs,
-			Resources:         r.resources,
+			NewResources:      r.newResources,
+			ActResources:      r.actResources,
 			DryRun:            r.dryRun,
 			TmpDir:            r.tmpDir,
+			Destroy:           r.destroy,
 		}),
 	})
 	if err != nil {

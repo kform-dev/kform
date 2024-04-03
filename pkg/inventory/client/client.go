@@ -30,6 +30,8 @@ type Client interface {
 	GetClusterInventoryInfo(ctx context.Context, inv Info) (*unstructured.Unstructured, error)
 
 	Apply(ctx context.Context, inv *unstructured.Unstructured) error
+
+	Delete(ctx context.Context, inv *unstructured.Unstructured) error
 }
 
 // ClusterClient is a implementation of the
@@ -140,6 +142,27 @@ func (r *ClusterClient) Apply(ctx context.Context, inv *unstructured.Unstructure
 	// Update the cluster inventory object instead.
 	_, err = namespacedClient.Update(ctx, inv, metav1.UpdateOptions{})
 	return err
+}
+
+// getMapping returns the RESTMapping for the provided resource.
+func (r *ClusterClient) Delete(ctx context.Context, inv *unstructured.Unstructured) error {
+	mapping, err := r.getMapping(inv)
+	if err != nil {
+		return err
+	}
+	// Create client to interact with cluster.
+	namespacedClient := r.dc.Resource(mapping.Resource).Namespace(inv.GetNamespace())
+
+	// Get cluster object, if exsists.
+	if _, err := namespacedClient.Get(ctx, inv.GetName(), metav1.GetOptions{}); err != nil {
+		if !apierrors.IsNotFound(err) {
+			return err
+		}
+		return nil
+	}
+
+	//Delete the inventory
+	return namespacedClient.Delete(ctx, inv.GetName(), metav1.DeleteOptions{})
 }
 
 // getMapping returns the RESTMapping for the provided resource.

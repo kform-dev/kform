@@ -1,5 +1,6 @@
 package pkgio
 
+/*
 import (
 	"context"
 
@@ -19,3 +20,4 @@ func (r *InventoryProviderReader) Read(ctx context.Context, providers map[string
 	}
 	return datastore, nil
 }
+*/

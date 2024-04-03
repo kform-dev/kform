@@ -17,6 +17,7 @@ import (
 type Manager interface {
 	GetInventory(ctx context.Context) (*invv1alpha1.Inventory, error)
 	Apply(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) error
+	Delete(ctx context.Context) error
 	// AddProvider
 	// AddPackage
 	// AddResource
@@ -30,8 +31,6 @@ func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.
 	if err != nil {
 		return nil, err
 	}
-	//invInfo := client.WrapInventoryInfoObj(localInventory)
-	//invStore := client.WrapInventoryObj(localInventory)
 
 	// create a client to interact with the cluster backend
 	client, err := client.ClusterClientFactory{StatusPolicy: policy.StatusPolicyNone}.NewClient(f)
@@ -39,43 +38,11 @@ func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.
 		return nil, err
 	}
 
-	/*
-		// get the stored inventory from the clusterBackend
-		storedInventory, err := client.GetClusterInventory(ctx, invInfo)
-		if err != nil {
-			return nil, err
-		}
-	*/
-
 	r := &manager{
 		client:         client,
 		localInventory: localInventory,
-		//invStorage:        invStore,
-		strategy: strategy,
+		strategy:       strategy,
 	}
-
-	/*
-		for provider, providerConfig := range storedInventory.Providers {
-			r.storedProviders.Create(ctx, store.ToKey(provider), providerConfig)
-		}
-		for pkg, packageInventory := range storedInventory.Packages {
-			pkgResources := memstore.NewStore[invv1alpha1.Object]()
-			r.storedPackages.Create(ctx, store.ToKey(pkg), pkgResources)
-
-			for resource, objSet := range packageInventory.PackageResources {
-				for idx, obj := range objSet {
-					pkgResources.Create(
-						ctx,
-						store.KeyFromNSN(types.NamespacedName{
-							Namespace: strconv.Itoa(idx),
-							Name:      resource,
-						}),
-						obj,
-					)
-				}
-			}
-		}
-	*/
 	return r, nil
 }
 
@@ -102,4 +69,8 @@ func (r *manager) GetInventory(ctx context.Context) (*invv1alpha1.Inventory, err
 	invInfo := client.WrapInventoryInfoObj(r.localInventory)
 	// get the stored inventory from the clusterBackend
 	return r.client.GetClusterInventory(ctx, invInfo)
+}
+
+func (r *manager) Delete(ctx context.Context) error {
+	return r.client.Delete(ctx, r.localInventory)
 }
