@@ -37,11 +37,11 @@ func (r *runner) getInputVars(ctx context.Context) (map[string]any, error) {
 	}
 	inputPkg := inputParser.Parse(ctx, kformDataStore)
 	if inputRecorder.Get().HasError() {
-		inputRecorder.Print()
+		//inputRecorder.Print()
 		log.Error("failed parsing input", "error", inputRecorder.Get().Error())
 		return nil, inputRecorder.Get().Error()
 	}
-	inputRecorder.Print()
+	//inputRecorder.Print()
 	// initialize the input vars
 	inputVars := map[string]any{}
 	var errm error

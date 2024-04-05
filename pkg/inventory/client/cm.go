@@ -119,16 +119,19 @@ func (r *ConfigMap) GetObject(ctx context.Context, providers map[string]string, 
 
 func buildDataMap(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) (map[string]string, error) {
 	dataMap := map[string]string{}
-	providerByte, err := invv1alpha1.MarshalProviders(providers)
-	if err != nil {
-		return dataMap, err
+	if providers != nil {
+		providerByte, err := invv1alpha1.MarshalProviders(providers)
+		if err != nil {
+			return dataMap, err
+		}
+		dataMap["providers"] = string(providerByte)
 	}
-	dataMap["providers"] = string(providerByte)
-	packageByte, err := invv1alpha1.MarshalPackages(ctx, newActuatedResources)
-	if err != nil {
-		return dataMap, err
+	if newActuatedResources != nil {
+		packageByte, err := invv1alpha1.MarshalPackages(ctx, newActuatedResources)
+		if err != nil {
+			return dataMap, err
+		}
+		dataMap["packages"] = string(packageByte)
 	}
-	dataMap["packages"] = string(packageByte)
-
-	return dataMap, err
+	return dataMap, nil
 }

@@ -104,6 +104,10 @@ func (r *Directory) Name() string {
 
 // Print prints the object using the printer into a new file in the directory.
 func (r *Directory) Print(fileName string, obj runtime.Object) error {
+	if obj == nil {
+		return nil
+	}
+
 	a, err := meta.Accessor(obj)
 	if err != nil {
 		// The object is not a `metav1.Object`, ignore it.

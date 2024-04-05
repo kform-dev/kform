@@ -125,13 +125,11 @@ func (r *execContext[T]) run(ctx context.Context) {
 		doneCh <- success
 		close(doneCh)
 		log.Debug("sent done", "from", r.vertexName, "to", vertexName)
-		//fmt.Printf("execContext execName %s vertexName: %s -> %s send done\n", r.execName, r.vertexName, vertexName)
 	}
 	// signal the result of the vertex execution to the main walk
 	r.doneFnCh <- success
 	close(r.doneFnCh)
-	log.Debug("done")
-	//fmt.Printf("execContext execName %s vertexName: %s -> walk main fn done\n", r.execName, r.vertexName)
+	log.Debug("done", "success", success)
 }
 
 func (r *execContext[T]) waitDependencies(ctx context.Context) bool {
@@ -139,16 +137,13 @@ func (r *execContext[T]) waitDependencies(ctx context.Context) bool {
 	// the dependency Channel or cancel or
 	log := log.FromContext(ctx).With("vertexName", r.vertexName)
 	log.Debug("wait dependencies", "deps", r.deps)
-	//fmt.Printf("execContext execName %s vertexName: %s wait dependencies: %v\n", r.execName, r.vertexName, r.depChs)
 DepSatisfied:
 	for depVertexName, depCh := range r.depChs {
-		//fmt.Printf("waitDependencies %s -> %s\n", depVertexName, r.vertexName)
 		//DepSatisfied:
 		for {
 			select {
 			case d, ok := <-depCh:
 				log.Debug("rcvd done", "from", depVertexName, "to", r.vertexName, "success", d, "ok", ok)
-				//fmt.Printf("execContext execName %s: %s -> %s rcvd done, d: %t, ok: %t\n", r.execName, depVertexName, r.vertexName, d, ok)
 				if ok {
 					continue DepSatisfied
 				}
@@ -159,11 +154,9 @@ DepSatisfied:
 				continue DepSatisfied
 			case <-time.After(time.Second * 5):
 				log.Debug("rwait timeout, waiting", "for", depVertexName)
-				//fmt.Printf("execContext execName %s vertexName: %s wait timeout, is waiting for %s\n", r.execName, r.vertexName, depVertexName)
 			}
 		}
 	}
 	log.Debug("finished waiting ...")
-	//fmt.Printf("execContext execName %s vertexName: %s finished waiting\n", r.execName, r.vertexName)
 	return true
 }

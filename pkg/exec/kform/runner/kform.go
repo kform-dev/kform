@@ -28,13 +28,12 @@ type KformConfig struct {
 	Destroy      bool
 }
 
-func newKformContext(cfg *KformConfig, actResourcesStore store.Storer[store.Storer[data.BlockData]]) *kformContext {
+func newKformContext(cfg *KformConfig) *kformContext {
 	return &kformContext{
-		cfg:               cfg,
-		outputStore:       memory.NewStore[data.BlockData](),
-		newResourcesStore: memory.NewStore[store.Storer[data.BlockData]](),
-		actResourcesStore: actResourcesStore,
-		providerConfigs:   memory.NewStore[string](),
+		cfg:             cfg,
+		outputStore:     memory.NewStore[data.BlockData](),
+		resourcesStore:  memory.NewStore[store.Storer[data.BlockData]](),
+		providerConfigs: memory.NewStore[string](),
 	}
 }
 
@@ -44,8 +43,7 @@ type kformContext struct {
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
 	outputStore       store.Storer[data.BlockData]
-	newResourcesStore store.Storer[store.Storer[data.BlockData]]
-	actResourcesStore store.Storer[store.Storer[data.BlockData]]
+	resourcesStore    store.Storer[store.Storer[data.BlockData]]
 }
 
 func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any) error {
@@ -66,11 +64,11 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 
 	parser.Parse(ctx)
 	if kformRecorder.Get().HasError() {
-		kformRecorder.Print()
+		//kformRecorder.Print()
 		log.Error("failed parsing packages", "error", kformRecorder.Get().Error())
 		return kformRecorder.Get().Error()
 	}
-	kformRecorder.Print()
+	//kformRecorder.Print()
 
 	// initialize providers which hold the identities of the raw providers
 	// that reference the exec/initialization to startup the binaries
@@ -116,7 +114,8 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 	// wait for kform dag to finish
 	err = <-errCh
 	if err != nil {
-		log.Error("exec failed", "err", err)
+		log.Error("exec failed", "kind", r.cfg.Kind.String(), "err", err)
+		return err
 	}
 	return nil
 }
@@ -125,12 +124,8 @@ func (r *kformContext) getOutputStore() store.Storer[data.BlockData] {
 	return r.outputStore
 }
 
-func (r *kformContext) getNewResources() store.Storer[store.Storer[data.BlockData]] {
-	return r.newResourcesStore
-}
-
-func (r *kformContext) getActResources() store.Storer[store.Storer[data.BlockData]] {
-	return r.actResourcesStore
+func (r *kformContext) getResources() store.Storer[store.Storer[data.BlockData]] {
+	return r.resourcesStore
 }
 
 func (r *kformContext) getProviders(ctx context.Context) map[string]string {
@@ -169,6 +164,11 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 		log.Error("failed running provider DAG", "err", err)
 		return err
 	}
+	if runRecorder.Get().HasError() {
+		log.Debug("failed executing provider DAG")
+		return runRecorder.Get().Error()
+	}
+
 	log.Debug("success executing provider DAG")
 	return nil
 }
@@ -186,10 +186,8 @@ func (r *kformContext) runKformDAG(ctx context.Context, errCh chan error, rootPa
 		Recorder:          runRecorder,
 		ProviderInstances: r.providerInstances,
 		Providers:         r.providers,
-		NewResources:      r.newResourcesStore,
-		ActResources:      r.actResourcesStore,
+		Resources:         r.resourcesStore,
 		DryRun:            r.cfg.DryRun,
-		TmpDir:            r.cfg.TmpDir,
 		Destroy:           r.cfg.Destroy,
 	})
 

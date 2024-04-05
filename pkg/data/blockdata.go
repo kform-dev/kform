@@ -43,6 +43,18 @@ func (r BlockData) Delete(rnode *yaml.RNode) (BlockData, error) {
 	return r, nil
 }
 
+func (r BlockData) GetItem(rnode *yaml.RNode) *yaml.RNode {
+	if len(r) == 0 {
+		return nil
+	}
+	for _, rn := range r {
+		if rn.GetNamespace() == rnode.GetNamespace() && rn.GetName() == rnode.GetName() {
+			return rn
+		}
+	}
+	return nil
+}
+
 func (r BlockData) Add(data *yaml.RNode) BlockData {
 	return append(r, data)
 }
@@ -123,4 +135,12 @@ func DeleteBlockStoreEntry(ctx context.Context, storeInstance store.Storer[Block
 		return blockData
 	})
 	return errm
+}
+
+func GetBlockStoreEntry(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, rn *yaml.RNode) *yaml.RNode {
+	blockData, err := storeInstance.Get(ctx, store.ToKey(blockName))
+	if err != nil {
+		return nil
+	}
+	return blockData.GetItem(rn)
 }

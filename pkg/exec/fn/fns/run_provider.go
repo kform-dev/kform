@@ -75,11 +75,6 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		log.Error("cannot initialize provider", "err", err)
 		return err
 	}
-	// add the provider client to the cache - delete will happen after the run
-	if err := r.providerInstances.Update(ctx, store.ToKey(vctx.BlockName), provider); err != nil {
-		log.Error("cannot update provider", "err", err)
-		return err
-	}
 
 	// configure the provider
 	cfgResp, err := provider.Configure(ctx, &kfplugin1.Configure_Request{
@@ -91,7 +86,13 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	}
 	if len(cfgResp.Diagnostics) != 0 {
 		log.Error("failed to configure provider", "error", cfgResp.Diagnostics)
-		return fmt.Errorf("provider %s not found in inventory err: %s", vctx.BlockName, cfgResp.Diagnostics)
+		return fmt.Errorf("failed to configure provider %s err: %s", vctx.BlockName, cfgResp.Diagnostics)
+	}
+
+	// add the provider client to the cache - delete will happen after the run
+	if err := r.providerInstances.Update(ctx, store.ToKey(vctx.BlockName), provider); err != nil {
+		log.Error("cannot update provider", "err", err)
+		return err
 	}
 	log.Debug("run block instance finished...")
 	return nil

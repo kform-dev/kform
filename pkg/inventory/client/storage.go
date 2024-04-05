@@ -17,18 +17,6 @@ type Storage interface {
 	GetObject(ctx context.Context, providers map[string]string, newActuatedResources store.Storer[store.Storer[data.BlockData]]) (*unstructured.Unstructured, error)
 	// Load retrieves the set of object metadata from the inventory object
 	Load(ctx context.Context) (*invv1alpha1.Inventory, error)
-	// Store the set of object metadata in the inventory object. This will
-	// replace the metadata, spec and status.
-	//Store(objs object.ObjMetadataSet, status []actuation.ObjectStatus) error
-
-	// Apply applies the inventory object. This utility function is used
-	// in InventoryClient.Merge and merges the metadata, spec and status.
-	//Apply(context.Context, dynamic.Interface, meta.RESTMapper, policy.StatusPolicy) error
-	// ApplyWithPrune applies the inventory object with a set of pruneIDs of
-	// objects to be pruned (object.ObjMetadataSet). This function is used in
-	// InventoryClient.Replace. pruneIDs are required for enabling custom logic
-	// handling of multiple ResourceGroup inventories.
-	//ApplyWithPrune(context.Context, dynamic.Interface, meta.RESTMapper, StatusPolicy, object.ObjMetadataSet) error
 }
 
 // ToStorageFunc creates the object which implements the Storage

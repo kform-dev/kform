@@ -13,7 +13,6 @@ import (
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/executor"
 	"github.com/kform-dev/kform/pkg/exec/fn"
-	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/recorder"
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/syntax/types"
@@ -28,10 +27,8 @@ func NewPackageFn(cfg *Config) fn.BlockInstanceRunner {
 		providers:         cfg.Providers,
 		providerInstances: cfg.ProviderInstances,
 		providerConfigs:   cfg.ProviderConfigs,
-		newResources:      cfg.NewResources,
-		actResources:      cfg.ActResources,
+		resources:         cfg.Resources,
 		dryRun:            cfg.DryRun,
-		tmpDir:            cfg.TmpDir,
 		destroy:           cfg.Destroy,
 	}
 }
@@ -46,10 +43,8 @@ type pkg struct {
 	providers         store.Storer[types.Provider]
 	providerInstances store.Storer[plugin.Provider]
 	providerConfigs   store.Storer[string]
-	newResources      store.Storer[store.Storer[data.BlockData]]
-	actResources      store.Storer[store.Storer[data.BlockData]]
+	resources         store.Storer[store.Storer[data.BlockData]]
 	dryRun            bool
-	tmpDir            *fsys.Directory
 	destroy           bool
 }
 
@@ -74,10 +69,10 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	newOutputStore := memory.NewStore[data.BlockData]()
 	newVarStore := memory.NewStore[data.VarData]()
 	newPkgResourceStore := memory.NewStore[data.BlockData]()
-	if r.newResources != nil {
+	if r.resources != nil {
 		// protection such that kform runs who dont request resources will not crash
 		// e.g. a provider run
-		r.newResources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
+		r.resources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
 	}
 
 	// localVars represent the dynamic input data into the package/mixin
@@ -111,10 +106,8 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 			ProviderInstances: r.providerInstances,
 			Providers:         r.providers,
 			ProviderConfigs:   r.providerConfigs,
-			NewResources:      r.newResources,
-			ActResources:      r.actResources,
+			Resources:         r.resources,
 			DryRun:            r.dryRun,
-			TmpDir:            r.tmpDir,
 			Destroy:           r.destroy,
 		}),
 	})

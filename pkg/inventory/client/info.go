@@ -17,8 +17,6 @@ type Info interface {
 
 	// ID of the inventory object.
 	ID() string
-
-	//Strategy() Strategy
 }
 
 // ToUnstructuredFunc returns the unstructured object for the

@@ -14,7 +14,6 @@ import (
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn"
-	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/render2/celrenderer"
 	"github.com/kform-dev/kform/pkg/syntax/types"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -28,10 +27,8 @@ func NewResourceFn(cfg *Config) fn.BlockInstanceRunner {
 		varStore:          cfg.VarStore,
 		outputStore:       cfg.OutputStore,
 		providerInstances: cfg.ProviderInstances,
-		newResources:      cfg.NewResources,
-		actResources:      cfg.ActResources,
+		resources:         cfg.Resources,
 		dryRun:            cfg.DryRun,
-		tmpDir:            cfg.TmpDir,
 		destroy:           cfg.Destroy,
 	}
 }
@@ -42,10 +39,8 @@ type resource struct {
 	varStore          store.Storer[data.VarData]
 	outputStore       store.Storer[data.BlockData]
 	providerInstances store.Storer[plugin.Provider]
-	newResources      store.Storer[store.Storer[data.BlockData]]
-	actResources      store.Storer[store.Storer[data.BlockData]]
+	resources         store.Storer[store.Storer[data.BlockData]]
 	dryRun            bool
-	tmpDir            *fsys.Directory
 	destroy           bool
 }
 
@@ -59,13 +54,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	// for inventory we could get multiple resources, which are not wrapped in
 	// count/forEach/ etc
 	for idx, rn := range vctx.Data.Get() {
-		// getFileName retrieves the filename of the obj to be written in the tmp dir
-		fileName, err := fsys.GetFileName(rn)
-		if err != nil {
-			log.Error("cannot get name from RNode", "error", err.Error())
-			return err
-		}
-		// no need for mutating the yaml node when doing an inventory read
+		// for inventory read we can skip mutating the input yaml
 		if r.kind != DagRunInventory {
 			celrenderer := celrenderer.New(r.varStore, localVars)
 			n, err := celrenderer.Render(ctx, vctx.Data.Get()[0].YNode()) // copy for safety
@@ -97,12 +86,22 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 			log.Error("cannot get provider", "provider", vctx.Attributes.Provider, "error", err.Error())
 			return err
 		}
+		if provider == nil {
+			log.Error("provider not initialized", "provider", vctx.Attributes.Provider)
+			return fmt.Errorf("provider %s not initialized for block: %s", vctx.Attributes.Provider, vctx.BlockName)
+		}
 		name := strings.Split(vctx.BlockName, ".")[0]
 		switch vctx.BlockType {
 		case kformv1alpha1.BlockTYPE_DATA:
 			log.Debug("resource data", "json req", string(b))
 			b, err = r.get(ctx, provider, name, b)
 			if err != nil {
+				// for inventory read we can ignore read errors
+				// it shows the resource does not exist, since something
+				// could have deleted the resource w/o cleaning the inventory
+				if r.kind == DagRunInventory {
+					return nil
+				}
 				return err
 			}
 		case kformv1alpha1.BlockTYPE_RESOURCE:
@@ -116,21 +115,24 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 				rb, err := r.get(ctx, provider, name, b)
 				if err != nil {
 					if !strings.Contains(err.Error(), "not found") {
+						log.Error("resource error get", "error", err.Error())
 						return err
 					}
+					log.Debug("not found -> create", "data", string(b))
 					b, err = r.create(ctx, provider, name, b)
 					if err != nil {
+						// no need for log as this is a duplicate
 						return err
 					}
+					log.Debug("create resp", "data", string(b))
 				} else {
-					var u unstructured.Unstructured
-					if err := json.Unmarshal(rb, &u); err != nil {
-						return err
-					}
+					log.Debug("found -> update", "data", string(b))
 					b, err = r.update(ctx, provider, name, b, rb)
 					if err != nil {
+						// no need for log as this is a duplicate
 						return err
 					}
+					log.Debug("update resp", "data", string(b))
 				}
 			}
 		case kformv1alpha1.BlockTYPE_LIST:
@@ -166,37 +168,23 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 				return fmt.Errorf("update vars failed failed for blockName %s, err: %s", vctx.BlockName, err.Error())
 			}
 
-			// add the resource to the new resources and print the resource in the tmpDir
-			// for diffing
+			// add the resource to the new resources to capture what is configured
+			// in a normal dagRun this is needed for blockType = RESOURCE
+			// for an inventory dagRun this is needed for blockType = DATA
 			if vctx.BlockType == kformv1alpha1.BlockTYPE_RESOURCE ||
 				(r.kind == DagRunInventory && vctx.BlockType == kformv1alpha1.BlockTYPE_DATA) {
 
-				// print the content to a temp directory
-				if err := r.tmpDir.Print(fileName, &unstructured.Unstructured{Object: v}); err != nil {
-					return err
-				}
 				// get the pkgStore in which we store the resources actuated per package
-				pkgStore, err := r.newResources.Get(ctx, store.ToKey(r.rootPackageName))
+				pkgStore, err := r.resources.Get(ctx, store.ToKey(r.rootPackageName))
 				if err != nil {
 					return err
 				}
-				// we need to fake the count for inventory read
+				// we need to fake the count for inventory dagRun read
 				if r.kind == DagRunInventory && vctx.BlockType == kformv1alpha1.BlockTYPE_DATA {
 					localVars[kformv1alpha1.LoopKeyItemsTotal] = vctx.Data.Len()
 					localVars[kformv1alpha1.LoopKeyItemsIndex] = idx
 				}
 				if err := data.UpdateBlockStoreEntry(ctx, pkgStore, vctx.BlockName, rn, localVars); err != nil {
-					return err
-				}
-			}
-			// delete the resource from the actualResources found in the inventory
-			if vctx.BlockType == kformv1alpha1.BlockTYPE_RESOURCE {
-				// get the pkgStore in which we store the resources actuated per package
-				pkgStore, err := r.actResources.Get(ctx, store.ToKey(r.rootPackageName))
-				if err != nil {
-					break
-				}
-				if err := data.DeleteBlockStoreEntry(ctx, pkgStore, vctx.BlockName, rn); err != nil {
 					return err
 				}
 			}
@@ -218,7 +206,6 @@ func (r *resource) get(ctx context.Context, provider plugin.Provider, name strin
 		return nil, err
 	}
 	if diag.Diagnostics(resp.Diagnostics).HasError() {
-		//log.Error("request failed", "error", diag.Diagnostics(resp.Diagnostics).Error())
 		return nil, diag.Diagnostics(resp.Diagnostics).Error()
 	}
 	return resp.Obj, nil
@@ -278,4 +265,53 @@ func (r *resource) update(ctx context.Context, provider plugin.Provider, name st
 		return nil, diag.Diagnostics(resp.Diagnostics).Error()
 	}
 	return resp.Obj, nil
+}
+
+type Resources struct {
+	store.Storer[store.Storer[data.BlockData]]
+}
+
+func (r Resources) GetItem(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) *unstructured.Unstructured {
+	log := log.FromContext(ctx)
+	pkgStore, err := r.Get(ctx, store.ToKey(pkgName))
+	if err != nil {
+		// not a worry as this means the package did not exist
+		return nil
+	}
+	storeRn := data.GetBlockStoreEntry(ctx, pkgStore, blockName, rn)
+	if storeRn == nil {
+		return nil
+	}
+	u, err := convertRNodeToUnstructured(rn)
+	if err != nil {
+		log.Error("cannot convert rn to unstructured", "err", err.Error())
+		return nil
+	}
+	return u
+}
+
+func (r Resources) Delete(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) error {
+	// get the pkgStore in which we store the resources actuated per package
+	pkgStore, err := r.Get(ctx, store.ToKey(pkgName))
+	if err != nil {
+		// not a worry as this means the package did not exist
+		return nil
+	}
+	if err := data.DeleteBlockStoreEntry(ctx, pkgStore, blockName, rn); err != nil {
+		return err
+	}
+	return nil
+}
+
+func convertRNodeToUnstructured(rn *yaml.RNode) (*unstructured.Unstructured, error) {
+	// Convert RNode directly to Unstructured
+	b, err := rn.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	var v map[string]any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: v}, nil
 }

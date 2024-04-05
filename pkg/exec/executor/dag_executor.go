@@ -95,7 +95,6 @@ func (r *dagExecutor[T]) init(ctx context.Context) {
 	}
 	//r.execMap = map[string]*execContext{}
 	for vertexName, v := range r.d.GetVertices() {
-		//fmt.Printf("executor init vertexName: %s\n", vertexName)
 		log.Debug("init", "vertexName", vertexName)
 		r.execMap[vertexName] = &execContext[T]{
 			execName:      r.cfg.Name,
@@ -119,7 +118,6 @@ func (r *dagExecutor[T]) init(ctx context.Context) {
 	for vertexName, execCtx := range r.execMap {
 		// only run these channels when we want to add dependency validation
 		for _, depVertexName := range r.d.GetUpVertexes(vertexName) {
-			//fmt.Printf("vertexName: %s, depBVertexName: %s\n", vertexName, depVertexName)
 			depCh := make(chan bool)
 			r.execMap[depVertexName].AddDoneCh(vertexName, depCh) // send when done
 			execCtx.AddDepCh(depVertexName, depCh)                // rcvr when done
@@ -150,19 +148,15 @@ func (r *dagExecutor[T]) Run(ctx context.Context) bool {
 func (r *dagExecutor[T]) execute(ctx context.Context, from string, init bool) bool {
 	log := log.FromContext(ctx).With("from", from, "init", init)
 	log.Debug("execute")
-	//fmt.Printf("execute from: %s init: %t\n", from, init)
 	execCtx := r.getExecContext(from)
-	//fmt.Printf("execute getExecContext from: %s init: %t, wCtx: %#v\n", from, init, wCtx)
 	// avoid scheduling a vertex that is already visted
 	if !execCtx.isVisted() {
 		// updated the exec context with the visited time
 		execCtx.updateVisted()
 		// execute the vertex function
 		log.Debug("execute scheduled vertex", "vertexname", execCtx.vertexName)
-		//fmt.Printf("execute scheduled vertex: %s\n", wCtx.vertexName)
 		go func() {
 			if !r.dependenciesFinished(execCtx.depChs) {
-				//fmt.Printf("%s not finished\n", from)
 				log.Debug("not finished", "vertexname", from)
 			}
 			if !execCtx.waitDependencies(ctx) {
@@ -201,7 +195,6 @@ func (r *dagExecutor[T]) dependenciesFinished(dep map[string]chan bool) bool {
 }
 
 func (r *dagExecutor[T]) waitFunctionCompletion(ctx context.Context) bool {
-	//fmt.Printf("main walk wait waiting for function completion...\n")
 	log := log.FromContext(ctx)
 	log.Debug("main walk wait waiting for function completion...")
 DepSatisfied:
@@ -210,7 +203,6 @@ DepSatisfied:
 			select {
 			case d, ok := <-doneFnCh:
 				log.Debug("main walk wait rcvd fn done", "from", vertexName, "success", d, "ok", ok)
-				//fmt.Printf("main walk wait rcvd fn done from %s, d: %t, ok: %t\n", vertexName, d, ok)
 				if !d {
 					r.cancelFn()
 					return false
@@ -221,11 +213,9 @@ DepSatisfied:
 				return false
 			case <-time.After(time.Second * 5):
 				log.Debug("main walk wait timeout, waiting", "for", vertexName)
-				//fmt.Printf("main walk wait timeout, waiting for %s\n", vertexName)
 			}
 		}
 	}
 	log.Debug("main walk wait function completion waiting finished - bye !")
-	//fmt.Printf("main walk wait function completion waiting finished - bye !\n")
 	return true
 }

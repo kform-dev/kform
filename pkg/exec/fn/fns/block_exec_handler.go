@@ -2,6 +2,7 @@ package fns
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -17,8 +18,7 @@ import (
 	"github.com/kform-dev/kform/pkg/recorder/diag"
 	"github.com/kform-dev/kform/pkg/render2/celrenderer"
 	"github.com/kform-dev/kform/pkg/syntax/types"
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
+	//"github.com/pkg/errors"
 )
 
 func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
@@ -38,10 +38,8 @@ func NewExecHandler(ctx context.Context, cfg *Config) *ExecHandler {
 			ProviderInstances: cfg.ProviderInstances,
 			Providers:         cfg.Providers,
 			ProviderConfigs:   cfg.ProviderConfigs,
-			NewResources:      cfg.NewResources,
-			ActResources:      cfg.ActResources,
+			Resources:         cfg.Resources,
 			DryRun:            cfg.DryRun,
-			TmpDir:            cfg.TmpDir,
 			Destroy:           cfg.Destroy,
 		}),
 	}
@@ -91,8 +89,9 @@ func (r *ExecHandler) runInstances(ctx context.Context, vctx *types.VertexContex
 	if err != nil {
 		return err
 	}
-
-	g, ctx := errgroup.WithContext(ctx)
+	var wg sync.WaitGroup
+	errCh := make(chan error, items.Len())
+	//g, ctx := errgroup.WithContext(ctx)
 	for idx, item := range items.List() {
 		localVars := map[string]any{}
 		item := item
@@ -105,25 +104,44 @@ func (r *ExecHandler) runInstances(ctx context.Context, vctx *types.VertexContex
 			// we treat a singleton in the same way as count -> count.index will not be used based on our syntax checks
 			localVars[kformv1alpha1.LoopKeyCountIndex] = item.key
 		}
-		g.Go(func() error {
+		wg.Add(1)
+		//g.Go(func() error {
+		go func(errCh chan error) {
+			defer wg.Done()
 			start := time.Now()
 			// lookup the blockType in the map and run the block instance
 			if err := r.fnsMap.Run(ctx, vctx, localVars); err != nil {
 				log.Debug("run result", "error", err)
 				recorder.Record(diag.FromErrWithTimeContext(vctx.String(), start, fmt.Errorf("failed running block instance: %s", err.Error())))
-				return err
+				errCh <- err
+				return
 			}
 			log.Debug("run result", "error", err)
 			recorder.Record(diag.Success(vctx.String(), start, "block instance run"))
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				//return ctx.Err()
+				errCh <- err
+				return
 			default:
-				return nil
+				errCh <- nil
+				return
+				//return nil
 			}
-		})
+		}(errCh)
 	}
-	return g.Wait()
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+	// Collect errors from the error channel
+	var errm error
+	for err := range errCh {
+		if err != nil {
+			errm = errors.Join(errm, err)
+		}
+	}
+	return errm
 }
 
 type item struct {
@@ -146,7 +164,7 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 				if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 					v = nil
 				} else {
-					return isForEach, items, errors.Wrap(err, "render loop forEach failed")
+					return isForEach, items, fmt.Errorf("render loop forEach failed: err: %s", err)
 				}
 			}
 			log.Debug("getLoopItems forEach render output", "value type", reflect.TypeOf(v), "value", v)
@@ -176,7 +194,7 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 				if strings.Contains(err.Error(), "no such key") || strings.Contains(err.Error(), "not found") {
 					v = int64(0)
 				} else {
-					return isForEach, items, errors.Wrap(err, "render count failed")
+					return isForEach, items, fmt.Errorf("render count failed: err: %s", err)
 				}
 			}
 			switch v := v.(type) {
@@ -194,7 +212,7 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 				items = initItems(int(v))
 				return isForEach, items, nil
 			default:
-				return isForEach, items, errors.Errorf("render count return an unsupported type; support [int64, string], got: %s", reflect.TypeOf(v))
+				return isForEach, items, fmt.Errorf("render count return an unsupported type; support [int64, string], got: %s", reflect.TypeOf(v))
 			}
 
 		}

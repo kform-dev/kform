@@ -12,8 +12,8 @@ import (
 	invv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
+	"github.com/kform-dev/kform/pkg/exec/diff"
 	"github.com/kform-dev/kform/pkg/exec/fn/fns"
-	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/inventory/manager"
 	"github.com/kform-dev/kform/pkg/pkgio"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -54,21 +54,23 @@ func (r *runner) Run(ctx context.Context) error {
 	log := log.FromContext(ctx)
 	log.Debug("run")
 
-	invDir, err := fsys.CreateTempDirectory("INV")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		invDir.Delete()
-	}()
-	newDir, err := fsys.CreateTempDirectory("NEW")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		newDir.Delete()
-	}()
-
+	/*
+		invDir, err := fsys.CreateTempDirectory("INV")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			invDir.Delete()
+		}()
+		newDir, err := fsys.CreateTempDirectory("NEW")
+		if err != nil {
+			return err
+		}
+		defer func() {
+			newDir.Delete()
+		}()
+	*/
+	var err error
 	r.invManager, err = manager.New(ctx, r.cfg.Path, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
 	if err != nil {
 		return err
@@ -90,78 +92,68 @@ func (r *runner) Run(ctx context.Context) error {
 		Path:         r.cfg.Path,
 		ResourceData: invResources,
 		DryRun:       r.cfg.DryRun,
-		TmpDir:       invDir, // directory where tmp inventory information is stored
-	}, nil)
+	})
 	if err := invkformCtx.ParseAndRun(ctx, map[string]any{}); err != nil {
 		return err
 	}
 
-	existingActuatedResources := invkformCtx.getNewResources()
+	existingActuatedResources := invkformCtx.getResources()
+	invProviders := invkformCtx.getProviders(ctx)
 	//listPackageResources(ctx, "inv", existingActuatedResources)
 
-	if r.cfg.Destroy {
-		// destroy (dryRun or regular)
-		// We dont run the dag but just destroy the resources from the inventory
-		// that were listed
-		if r.cfg.DryRun {
-			if err := diff(invDir.Path, newDir.Path); err != nil {
-				return err
-			}
-		}
-		// get inventory resource to destroy
-		invResources := getInventoryResourcesToDelete(ctx, existingActuatedResources, invkformCtx.getProviders(ctx))
-		// invoke the kform context to destroy the resources
-		invkformCtx := newKformContext(&KformConfig{
-			Kind:         fns.DagRunInventory,
-			PkgName:      r.cfg.PackageName,
-			Path:         r.cfg.Path,
-			ResourceData: invResources,
-			DryRun:       r.cfg.DryRun,
-			TmpDir:       invDir, // directory where tmp inventory information is stored
-			Destroy:      true,
-		}, nil)
-		if err := invkformCtx.ParseAndRun(ctx, map[string]any{}); err != nil {
+	var newActuatedResources store.Storer[store.Storer[data.BlockData]]
+	var outputStore store.Storer[data.BlockData]
+	var kformProviders map[string]string
+	// when this is not a detroy run we collect inputVars and run the kform dag
+	if !r.cfg.Destroy {
+		inputVars, err := r.getInputVars(ctx)
+		if err != nil {
 			return err
 		}
-		return r.invManager.Delete(ctx)
-	}
-	// apply (dryRun or regular)
-	inputVars, err := r.getInputVars(ctx)
-	if err != nil {
-		return err
+
+		r.outputSink, err = r.getOuputSink(ctx)
+		if err != nil {
+			return err
+		}
+
+		kformCtx := newKformContext(&KformConfig{
+			Kind:         fns.DagRunRegular,
+			PkgName:      r.cfg.PackageName,
+			Path:         r.cfg.Path,
+			ResourceData: nil,
+			DryRun:       r.cfg.DryRun,
+		})
+		if err := kformCtx.ParseAndRun(ctx, inputVars); err != nil {
+			return err
+		}
+		outputStore = kformCtx.getOutputStore()
+		kformProviders = kformCtx.getProviders(ctx)
+		newActuatedResources = kformCtx.getResources()
 	}
 
-	r.outputSink, err = r.getOuputSink(ctx)
-	if err != nil {
-		return err
-	}
-
-	kformCtx := newKformContext(&KformConfig{
-		Kind:         fns.DagRunRegular,
-		PkgName:      r.cfg.PackageName,
-		Path:         r.cfg.Path,
-		ResourceData: nil,
-		DryRun:       r.cfg.DryRun,
-		TmpDir:       newDir,
-	}, existingActuatedResources)
-	if err := kformCtx.ParseAndRun(ctx, inputVars); err != nil {
-		return err
-	}
-
-	outputStore := kformCtx.getOutputStore()
-	providers := kformCtx.getProviders(ctx)
-	newActuatedResources := kformCtx.getNewResources()
 	//listPackageResources(ctx, "new", newActuatedResources)
 
+	// we prepare the differ to diff both resources we collect
+	// if is possible we get nil stores but the differ is able to handle this
+	differ, err := diff.NewDiffer(existingActuatedResources, newActuatedResources)
+	if err != nil {
+		return err
+	}
+	defer differ.TearDown() // delete the directories when done
+	if err := differ.Run(ctx); err != nil {
+		return err
+	}
+
 	if r.cfg.DryRun {
-		if err := diff(invDir.Path, newDir.Path); err != nil {
+		if err := diffExec(differ.FromPath(), differ.ToPath()); err != nil {
 			return err
 		}
 	} else {
+		//
 		// delete the remaining resources
-		listPackageResources(ctx, "inv to be deleted", kformCtx.getActResources())
+		listPackageResources(ctx, "inv to be deleted", differ.GetResourceToPrune())
 		// get inventory resource to destroy
-		invResources := getInventoryResourcesToDelete(ctx, kformCtx.getActResources(), invkformCtx.getProviders(ctx))
+		invResources := getInventoryResourcesToDelete(ctx, differ.GetResourceToPrune(), invProviders)
 		// invoke the kform context to destroy the resources
 		invkformCtx := newKformContext(&KformConfig{
 			Kind:         fns.DagRunInventory,
@@ -169,14 +161,18 @@ func (r *runner) Run(ctx context.Context) error {
 			Path:         r.cfg.Path,
 			ResourceData: invResources,
 			DryRun:       r.cfg.DryRun,
-			TmpDir:       invDir, // directory where tmp inventory information is stored
-			Destroy:      true,
-		}, nil)
+			//TmpDir:       invDir, // directory where tmp inventory information is stored
+			Destroy: true,
+		})
 		if err := invkformCtx.ParseAndRun(ctx, map[string]any{}); err != nil {
 			return err
 		}
 
-		if err := r.invManager.Apply(ctx, providers, newActuatedResources); err != nil {
+		// when we detroy we delete the inventory
+		if r.cfg.Destroy {
+			return r.invManager.Delete(ctx)
+		}
+		if err := r.invManager.Apply(ctx, kformProviders, newActuatedResources); err != nil {
 			return err
 		}
 	}
@@ -189,14 +185,16 @@ func (r *runner) Run(ctx context.Context) error {
 }
 
 func listPackageResources(ctx context.Context, prefix string, pkgResourcesStore store.Storer[store.Storer[data.BlockData]]) {
-	pkgResourcesStore.List(ctx, func(ctx context.Context, k store.Key, s store.Storer[data.BlockData]) {
-		pkgName := k.Name
-		s.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
-			for idx, rn := range bd.Get() {
-				fmt.Println("pkgResource", prefix, pkgName, k.String(), "idx", idx, rn.GetApiVersion(), rn.GetKind(), rn.GetName(), rn.GetNamespace(), rn.GetAnnotations())
-			}
+	if pkgResourcesStore != nil {
+		pkgResourcesStore.List(ctx, func(ctx context.Context, k store.Key, s store.Storer[data.BlockData]) {
+			pkgName := k.Name
+			s.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+				for idx, rn := range bd.Get() {
+					fmt.Println("pkgResource", prefix, pkgName, k.String(), "idx", idx, rn.GetApiVersion(), rn.GetKind(), rn.GetName(), rn.GetNamespace(), rn.GetAnnotations())
+				}
+			})
 		})
-	})
+	}
 }
 
 func getInventoryResourcesToDelete(ctx context.Context, pkgResourcesStore store.Storer[store.Storer[data.BlockData]], providers map[string]string) store.Storer[[]byte] {
@@ -230,8 +228,9 @@ func getInventoryResourcesToDelete(ctx context.Context, pkgResourcesStore store.
 	return invResources
 }
 
-func diff(invPath, newPath string) error {
-	args := []string{"-u", "-N", invPath, newPath}
+// execute the diff program comparing the from path with the to path
+func diffExec(from, to string) error {
+	args := []string{"-u", "-N", from, to}
 	cmd := exec.Command("diff", args...)
 	out, err := cmd.CombinedOutput()
 	exitCode := cmd.ProcessState.ExitCode()
