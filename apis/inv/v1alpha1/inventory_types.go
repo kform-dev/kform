@@ -5,7 +5,7 @@ data:
   providers:
 	kubernetes:
 	  config:
-		apiVersion: kubernetes.provider.kform.io/v1alpha1
+		apiVersion: kubernetes.provider.kform.dev/v1alpha1
 		kind: ProviderConfig
 		metadata:
 			name: kubernetes

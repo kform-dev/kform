@@ -3,7 +3,7 @@ kind: ConfigMap
 data:
   providers: |
     prov1: |
-      apiVersion: kubernetes.provider.kform.io/v1alpha1
+      apiVersion: kubernetes.provider.kform.dev/v1alpha1
       kind: ProviderConfig
       metadata:
         name: kubernetes
@@ -11,7 +11,7 @@ data:
       spec:
         configPath: ~/.kube/config
     prov2: |
-      apiVersion: kubernetes.provider.kform.io/v1alpha1
+      apiVersion: kubernetes.provider.kform.dev/v1alpha1
       kind: ProviderConfig
       metadata:
         name: kubernetes

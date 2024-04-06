@@ -31,7 +31,7 @@ func TestBuildObjMap(t *testing.T) {
 		"Single": {
 			path:                             "testfiles/inv2.yaml",
 			expectedProviders:                []string{"prov1"},
-			expectedProviderConfigAPIVersion: "kubernetes.provider.kform.io/v1alpha1",
+			expectedProviderConfigAPIVersion: "kubernetes.provider.kform.dev/v1alpha1",
 			expectedProviderConfigKind:       "ProviderConfig",
 			expectedPackages:                 []string{"root"},
 			expectedPackageInventory: map[string]*invv1alpha1.PackageInventory{
@@ -56,7 +56,7 @@ func TestBuildObjMap(t *testing.T) {
 		"Double": {
 			path:                             "testfiles/inv3.yaml",
 			expectedProviders:                []string{"prov1", "prov2"},
-			expectedProviderConfigAPIVersion: "kubernetes.provider.kform.io/v1alpha1",
+			expectedProviderConfigAPIVersion: "kubernetes.provider.kform.dev/v1alpha1",
 			expectedProviderConfigKind:       "ProviderConfig",
 			expectedPackages:                 []string{"pkg1", "root"},
 			expectedPackageInventory: map[string]*invv1alpha1.PackageInventory{
