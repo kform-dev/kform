@@ -8,7 +8,7 @@ before:
 
 builds:
 - id: kform
-  main: cmd/main.go
+  main: cmd/kform/main.go
   env:
     - CGO_ENABLED=0
   goos:
