@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: setup go
-        uses: actions/setup-go@v4.1.0
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - name: run go releaser
