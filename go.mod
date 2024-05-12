@@ -2,27 +2,27 @@ module github.com/kform-dev/kform
 
 go 1.22.2
 
-replace github.com/google/cel-go => github.com/google/cel-go v0.16.1
+//replace github.com/google/cel-go => github.com/google/cel-go v0.16.1
 
-replace k8s.io/client-go => k8s.io/client-go v0.28.6
+//replace k8s.io/client-go => k8s.io/client-go v0.28.6
 
-replace k8s.io/api => k8s.io/api v0.28.6
+//replace k8s.io/api => k8s.io/api v0.28.6
 
-replace k8s.io/apimachinery => k8s.io/apimachinery v0.28.6
+//replace k8s.io/apimachinery => k8s.io/apimachinery v0.28.6
 
-replace k8s.io/component-base => k8s.io/component-base v0.28.6
+//replace k8s.io/component-base => k8s.io/component-base v0.28.6
 
-replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.28.6
+//replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.28.6
 
-replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
+//replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
 
-replace k8s.io/apiserver => k8s.io/apiserver v0.28.6
+//replace k8s.io/apiserver => k8s.io/apiserver v0.28.6
 
-replace sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.15.0
+//replace sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.15.0
 
-replace sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.15.0
+//replace sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.15.0
 
-replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.6
+//replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.6
 
 require (
 	github.com/apparentlymart/go-versions v1.0.2
@@ -57,7 +57,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v1.0.0 // indirect
-	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -87,6 +87,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20231229205709-960ae82b1e42 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
 	github.com/henderiw/apiserver-builder v0.0.2-0.20240222151136-8b4cddd205c5 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
@@ -107,6 +108,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.17.1 // indirect
 	github.com/onsi/gomega v1.32.0 // indirect
@@ -144,7 +146,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
-	gopkg.in/evanphx/json-patch.v5 v5.6.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
