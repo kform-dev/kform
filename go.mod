@@ -1,6 +1,6 @@
 module github.com/kform-dev/kform
 
-go 1.21.4
+go 1.22.2
 
 replace github.com/google/cel-go => github.com/google/cel-go v0.16.1
 
@@ -29,18 +29,20 @@ require (
 	github.com/google/cel-go v0.18.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/henderiw-nephio/kform v0.0.3-0.20231122120427-bba8439876bb
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/store v0.0.0-20240311135319-eb32ab80594b
+	github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d
+	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/pkg-server v0.0.0-20240307074406-56979a3e1134
+	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.29.3
-	k8s.io/apimachinery v0.29.3
+	k8s.io/api v0.30.0
+	k8s.io/apimachinery v0.30.0
 	k8s.io/cli-runtime v0.29.3
-	k8s.io/client-go v0.29.3
+	k8s.io/client-go v0.30.0
 	k8s.io/kubectl v0.28.8
 	sigs.k8s.io/cli-utils v0.35.0
 	sigs.k8s.io/kustomize/kyaml v0.15.0
@@ -101,7 +103,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/oklog/run v1.0.0 // indirect
+	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.14.0 // indirect
 	github.com/onsi/gomega v1.30.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -122,30 +124,30 @@ require (
 	go.opentelemetry.io/otel/metric v1.20.0 // indirect
 	go.opentelemetry.io/otel/trace v1.20.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
-	golang.org/x/crypto v0.19.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/exp v0.0.0-20231127185646-65229373498e // indirect
 	golang.org/x/mod v0.14.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
-	golang.org/x/term v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.16.1 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20231106174013-bbf56f31fb17 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231127180814-3a041ad873d4 // indirect
-	google.golang.org/grpc v1.61.1 // indirect
-	google.golang.org/protobuf v1.33.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240227224415-6ceb2ff114de // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
+	google.golang.org/grpc v1.63.2 // indirect
+	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/evanphx/json-patch.v5 v5.6.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/apiserver v0.29.2 // indirect
 	k8s.io/component-base v0.29.3 // indirect
-	k8s.io/klog/v2 v2.110.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
+	k8s.io/klog/v2 v2.120.1 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.5-0.20230601165947-6ce0bf390ce3 // indirect

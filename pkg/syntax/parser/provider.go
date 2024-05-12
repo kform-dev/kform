@@ -22,9 +22,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/henderiw-nephio/kform/kform-plugin/plugin"
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
+	"github.com/kform-dev/kform-plugin/plugin"
 	"github.com/kform-dev/kform/pkg/syntax/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

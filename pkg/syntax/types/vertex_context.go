@@ -19,8 +19,8 @@ package types
 import (
 	"fmt"
 
-	"github.com/henderiw-nephio/kform/tools/pkg/dag"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
+	"github.com/kform-dev/kform/pkg/dag"
 	"github.com/kform-dev/kform/pkg/data"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/henderiw-nephio/kform/kform-plugin/plugin"
 	"github.com/henderiw/store"
+	"github.com/kform-dev/kform-plugin/plugin"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/fn"

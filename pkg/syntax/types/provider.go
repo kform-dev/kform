@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/henderiw-nephio/kform/kform-plugin/kfprotov1/kfplugin1"
-	kfplugin "github.com/henderiw-nephio/kform/kform-plugin/plugin"
-	"github.com/henderiw-nephio/kform/plugin"
-	"github.com/henderiw-nephio/kform/tools/pkg/syntax/types/logging"
 	"github.com/henderiw/logger/log"
+	"github.com/kform-dev/kform-plugin/kfprotov1/kfplugin1"
+	kfplugin "github.com/kform-dev/kform-plugin/plugin"
+	"github.com/kform-dev/kform/pkg/syntax/types/logging"
+	"github.com/kform-dev/plugin"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 

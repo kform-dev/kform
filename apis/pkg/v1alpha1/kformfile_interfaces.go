@@ -2,7 +2,7 @@ package v1alpha1
 
 import (
 	"github.com/apparentlymart/go-versions/versions"
-	"github.com/henderiw-nephio/kform/tools/pkg/syntax/address"
+	"github.com/kform-dev/kform/pkg/syntax/address"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
