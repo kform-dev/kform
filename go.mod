@@ -35,7 +35,7 @@ require (
 	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e
 	github.com/pkg/errors v0.9.1
-	github.com/pkgserver-dev/pkgserver v0.0.0-20240512163643-dee5a74d22af
+	github.com/pkgserver-dev/pkgserver v0.0.0-20240512165326-1040c7621fda
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -108,8 +108,8 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oklog/run v1.1.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.14.0 // indirect
-	github.com/onsi/gomega v1.30.0 // indirect
+	github.com/onsi/ginkgo/v2 v2.17.1 // indirect
+	github.com/onsi/gomega v1.32.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
