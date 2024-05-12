@@ -22,12 +22,11 @@ import (
 	"strings"
 
 	"github.com/henderiw/store"
-	configv1alpha1 "github.com/kform-dev/pkg-server/apis/config/v1alpha1"
-	pkgv1alpha1 "github.com/kform-dev/pkg-server/apis/pkg/v1alpha1"
-	"github.com/kform-dev/pkg-server/apis/pkgid"
-	"github.com/kform-dev/pkg-server/pkg/auth/ui"
-	//"github.com/kform-dev/pkg-server/pkg/auth/viper"
-	"github.com/kform-dev/pkg-server/pkg/git/pkg"
+	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
+	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/pkg/auth/ui"
+	"github.com/pkgserver-dev/pkgserver/pkg/git/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
