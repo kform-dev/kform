@@ -2,35 +2,13 @@ module github.com/kform-dev/kform
 
 go 1.22.2
 
-//replace github.com/google/cel-go => github.com/google/cel-go v0.16.1
-
-//replace k8s.io/client-go => k8s.io/client-go v0.28.6
-
-//replace k8s.io/api => k8s.io/api v0.28.6
-
-//replace k8s.io/apimachinery => k8s.io/apimachinery v0.28.6
-
-//replace k8s.io/component-base => k8s.io/component-base v0.28.6
-
-//replace k8s.io/cli-runtime => k8s.io/cli-runtime v0.28.6
-
-//replace k8s.io/kube-openapi => k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9
-
-//replace k8s.io/apiserver => k8s.io/apiserver v0.28.6
-
-//replace sigs.k8s.io/kustomize/kyaml => sigs.k8s.io/kustomize/kyaml v0.15.0
-
-//replace sigs.k8s.io/kustomize/api => sigs.k8s.io/kustomize/api v0.15.0
-
-//replace k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.6
-
 require (
 	github.com/apparentlymart/go-versions v1.0.2
 	github.com/google/cel-go v0.18.2
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
-	github.com/henderiw/store v0.0.0-20240311135319-eb32ab80594b
+	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
 	github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d
 	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e

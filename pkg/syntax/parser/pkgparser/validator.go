@@ -73,7 +73,9 @@ func (r *PackageParser) processBlock(ctx context.Context, rn *yaml.RNode) {
 		return
 	}
 	// blockType is known -> process the specifics of each blockType
-	log := log.FromContext(ctx).With("blockType", blockType.String())
+	l := log.FromContext(ctx).With("blockType", blockType.String(), "apiVersion", rn.GetApiVersion(), "kind", rn.GetName(), "name", rn.GetName())
+	ctx = log.IntoContext(ctx, l)
+	log := log.FromContext(ctx)
 	log.Debug("processBlock")
 	// initialize the specific blockType implementation
 	bt, err := types.InitializeBlock(ctx, blockType)

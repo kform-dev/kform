@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 )
@@ -55,6 +56,7 @@ func (r VarData) Insert(key string, total, pos int, data any) error {
 // Updates the results in the store; for loop vars it uses the index of the loop var to store the result
 // since we store the results of a given blockName in a slice []any
 func UpdateVarStore(ctx context.Context, varStore store.Storer[VarData], blockName string, data any, localVars map[string]any) error {
+	log := log.FromContext(ctx)
 	total, ok := localVars[kformv1alpha1.LoopKeyItemsTotal]
 	if !ok {
 		total = 1
@@ -76,7 +78,9 @@ func UpdateVarStore(ctx context.Context, varStore store.Storer[VarData], blockNa
 		return fmt.Errorf("index cannot be bigger or equal to total index: %d, totol: %d", indexInt, totalInt)
 	}
 	var errm error
+	log.Debug("update varStore entry", "key", store.ToKey(blockName), "totalInt", totalInt, "indexInt", indexInt, "data", data)
 	varStore.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, varData VarData) VarData {
+		log.Debug("update varStore", "key", store.ToKey(blockName), "varData", varData, "totalInt", totalInt, "indexInt", indexInt, "data", data)
 		if varData == nil {
 			varData = VarData{}
 		}
