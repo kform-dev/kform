@@ -13,7 +13,7 @@ require (
 	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e
 	github.com/pkg/errors v0.9.1
-	github.com/pkgserver-dev/pkgserver v0.0.0-20240512165326-1040c7621fda
+	github.com/pkgserver-dev/pkgserver v0.0.0-20240513152327-4be67d1a028a
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
