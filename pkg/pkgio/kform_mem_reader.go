@@ -67,7 +67,6 @@ func (r *KformMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 					errors.Join(errm, err)
 				}
 			}()
-
 		})
 	}
 

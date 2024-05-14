@@ -108,6 +108,7 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 	}
 	// we either can get the data from a directory reader or a memory
 	var kformDataStore store.Storer[*yaml.RNode]
+	fmt.Println("kform parsePackage", "data", data)
 	if data != nil {
 		var err error
 		reader := pkgio.KformMemReader{
@@ -129,6 +130,10 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 			return
 		}
 	}
+
+	kformDataStore.List(ctx, func(ctx context.Context, k store.Key, r *yaml.RNode) {
+		fmt.Println("kform parsePackage", "key", k.String(), "value", r.MustString())
+	})
 
 	pkg := packageParser.Parse(ctx, kformDataStore)
 	if r.recorder.Get().HasError() {
