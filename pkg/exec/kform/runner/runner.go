@@ -54,22 +54,6 @@ func (r *runner) Run(ctx context.Context) error {
 	log := log.FromContext(ctx)
 	log.Debug("run")
 
-	/*
-		invDir, err := fsys.CreateTempDirectory("INV")
-		if err != nil {
-			return err
-		}
-		defer func() {
-			invDir.Delete()
-		}()
-		newDir, err := fsys.CreateTempDirectory("NEW")
-		if err != nil {
-			return err
-		}
-		defer func() {
-			newDir.Delete()
-		}()
-	*/
 	var err error
 	r.invManager, err = manager.New(ctx, r.cfg.Path, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
 	if err != nil {

@@ -55,6 +55,9 @@ func New(ioStreams genericclioptions.IOStreams) *Config {
 	}
 }
 
+// Complete adds the inventoryID to the config if it is not supplied
+// If the inventoryID is generated or supplied the fn validates the correctness
+// of the inventoryID
 func (r *Config) Complete(ctx context.Context, path string) error {
 	log := log.FromContext(ctx)
 
@@ -77,7 +80,9 @@ func (r *Config) Complete(ctx context.Context, path string) error {
 		return fmt.Errorf("invalid group name: %s", r.InventoryID)
 	}
 	// Output the calculated namespace used for inventory object.
-	fmt.Fprintf(r.ioStreams.Out, "inventoryID: %s is used for inventory object\n", r.InventoryID)
+	if r.ioStreams.Out != nil {
+		fmt.Fprintf(r.ioStreams.Out, "inventoryID: %s is used for inventory object\n", r.InventoryID)
+	}
 	return nil
 }
 
@@ -116,7 +121,7 @@ func (r *Config) Run(ctx context.Context) error {
 		return fmt.Errorf("unable to create inventory object template file: %s", err)
 	}
 	defer f.Close()
-	_, err = f.WriteString(r.fillInValues(ctx))
+	_, err = f.WriteString(r.GetInventoryFileString())
 	if err != nil {
 		return fmt.Errorf("unable to write inventory object template file: %s", invPath)
 	}
@@ -124,10 +129,14 @@ func (r *Config) Run(ctx context.Context) error {
 	return nil
 }
 
+func (r *Config) GetInventoryFileString() string {
+	return r.fillInValues()
+}
+
 // fillInValues returns a string of the inventory object template
 // ConfigMap with values filled in (eg. namespace, inventoryID).
 // TODO(seans3): Look into text/template package.
-func (r *Config) fillInValues(_ context.Context) string {
+func (r *Config) fillInValues() string {
 	now := time.Now()
 	nowStr := now.Format("2006-01-02 15:04:05 MST")
 	randomSuffix := common.RandomStr()
