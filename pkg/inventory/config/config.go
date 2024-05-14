@@ -70,7 +70,7 @@ func (r *Config) Complete(ctx context.Context, path string) error {
 
 	// Set the default inventory label if one does not exist.
 	if len(r.InventoryID) == 0 {
-		inventoryID, err := r.defaultInventoryID()
+		inventoryID, err := DefaultInventoryID()
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func (r *Config) Complete(ctx context.Context, path string) error {
 
 // defaultInventoryID returns a UUID string as a default unique
 // identifier for a inventory object label.
-func (r *Config) defaultInventoryID() (string, error) {
+func DefaultInventoryID() (string, error) {
 	u, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
