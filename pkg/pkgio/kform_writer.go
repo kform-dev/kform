@@ -21,6 +21,8 @@ type KformWriter struct {
 	Type OutputSink
 	// Could be a file or directory
 	Path string
+
+	OuputData store.Storer[[]byte] // used for memory
 }
 
 func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.BlockData]) error {
@@ -37,7 +39,7 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 			fileIdx := rnAnnotations[kformv1alpha1.KformAnnotationKey_INDEX]
 
 			switch r.Type {
-			case OutputSink_Dir:
+			case OutputSink_Dir, OutputSink_Memory:
 				keys = append(keys, k)
 			case OutputSink_File, OutputSink_StdOut: // prioritize namespace; all the rest is mapped after to a single file
 				if rn.GetKind() == "Namespace" {
@@ -45,7 +47,7 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 				} else {
 					keys = append(keys, k)
 				}
-			case OutputSink_FileRetain, OutputSink_Memory:
+			case OutputSink_FileRetain:
 				if len(files[path]) == 0 {
 					files[path] = []store.Key{}
 				}
@@ -83,8 +85,42 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 	case OutputSink_FileRetain:
 		return r.writeRetainFile(ctx, files, datastore)
 	case OutputSink_Memory:
+		return r.writeMem(ctx, keys, datastore)
 	}
 	return nil
+}
+
+func (r *KformWriter) writeMem(ctx context.Context, keys []store.Key, datastore store.Storer[data.BlockData]) error {
+	if r.OuputData == nil {
+		return fmt.Errorf("kformWriter to memory requires a output data store, got nil")
+	}
+	var errm error
+	for _, key := range keys {
+		bd, err := datastore.Get(ctx, store.ToKey(key.Name))
+		if err != nil {
+			errors.Join(errm, err)
+			continue
+		}
+
+		for _, rn := range bd {
+			rnAnnotations := rn.GetAnnotations()
+			for _, a := range kformv1alpha1.KformAnnotations {
+				delete(rnAnnotations, a)
+			}
+			rn.SetAnnotations(rnAnnotations)
+
+			fileName := filepath.Join(r.Path, fmt.Sprintf(
+				"%s.%s.%s.%s.yaml",
+				strings.ReplaceAll(rn.GetApiVersion(), "/", "_"),
+				rn.GetKind(),
+				rn.GetNamespace(),
+				rn.GetName(),
+			))
+
+			r.OuputData.Create(ctx, store.ToKey(fileName), []byte(rn.MustString()))
+		}
+	}
+	return errm
 }
 
 func (r *KformWriter) writeDir(ctx context.Context, keys []store.Key, datastore store.Storer[data.BlockData]) error {

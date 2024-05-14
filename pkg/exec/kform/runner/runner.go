@@ -85,7 +85,7 @@ func (r *runner) Run(ctx context.Context) error {
 	invkformCtx := newKformContext(&KformConfig{
 		Kind:    fns.DagRunInventory,
 		PkgName: r.cfg.PackageName,
-		//Path:         r.cfg.Path, 
+		//Path:         r.cfg.Path,
 		ResourceData: invResources, // path is not needed as invResources take care of the data
 		DryRun:       r.cfg.DryRun,
 	})
@@ -176,8 +176,9 @@ func (r *runner) Run(ctx context.Context) error {
 	}
 
 	w := pkgio.KformWriter{
-		Type: r.outputSink,
-		Path: r.cfg.Output,
+		Type:      r.outputSink,
+		Path:      r.cfg.Output,
+		OuputData: r.cfg.OutputData,
 	}
 	return w.Write(ctx, outputStore)
 }

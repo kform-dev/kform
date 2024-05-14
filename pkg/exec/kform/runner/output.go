@@ -14,7 +14,7 @@ func (r *runner) getOuputSink(ctx context.Context) (pkgio.OutputSink, error) {
 	log := log.FromContext(ctx)
 	log.Debug("getOuputSink")
 	output := pkgio.OutputSink_StdOut
-	if r.cfg.OutputData != nil { // if memory outpur is specified it gets priority
+	if r.cfg.OutputData != nil { // if memory output is specified it gets priority
 		return pkgio.OutputSink_Memory, nil
 	}
 	if r.cfg.Output != "" {
