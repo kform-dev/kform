@@ -117,7 +117,7 @@ func (r *runner) Run(ctx context.Context) error {
 			Kind:         fns.DagRunRegular,
 			PkgName:      r.cfg.PackageName,
 			Path:         r.cfg.Path,
-			ResourceData: nil,
+			ResourceData: r.cfg.ResourceData,
 			DryRun:       r.cfg.DryRun,
 		})
 		if err := kformCtx.ParseAndRun(ctx, inputVars); err != nil {
