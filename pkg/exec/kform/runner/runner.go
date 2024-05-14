@@ -83,13 +83,14 @@ func (r *runner) Run(ctx context.Context) error {
 	}
 
 	invkformCtx := newKformContext(&KformConfig{
-		Kind:         fns.DagRunInventory,
-		PkgName:      r.cfg.PackageName,
-		Path:         r.cfg.Path,
-		ResourceData: invResources,
+		Kind:    fns.DagRunInventory,
+		PkgName: r.cfg.PackageName,
+		//Path:         r.cfg.Path, 
+		ResourceData: invResources, // path is not needed as invResources take care of the data
 		DryRun:       r.cfg.DryRun,
 	})
 	if err := invkformCtx.ParseAndRun(ctx, map[string]any{}); err != nil {
+		log.Error("inventory parseAndRun failed", "err", err.Error())
 		return err
 	}
 
@@ -120,6 +121,7 @@ func (r *runner) Run(ctx context.Context) error {
 			DryRun:       r.cfg.DryRun,
 		})
 		if err := kformCtx.ParseAndRun(ctx, inputVars); err != nil {
+			log.Error("regular parseAndRun failed", "err", err.Error())
 			return err
 		}
 		outputStore = kformCtx.getOutputStore()
