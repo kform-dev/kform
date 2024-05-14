@@ -14,8 +14,10 @@ import (
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/exec/diff"
 	"github.com/kform-dev/kform/pkg/exec/fn/fns"
+	"github.com/kform-dev/kform/pkg/inventory/config"
 	"github.com/kform-dev/kform/pkg/inventory/manager"
 	"github.com/kform-dev/kform/pkg/pkgio"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/kubectl/pkg/cmd/util"
 )
@@ -25,17 +27,18 @@ type Runner interface {
 }
 
 type Config struct {
-	Factory      util.Factory
-	PackageName  string
-	Input        string // used for none, file or dir
-	InputData    store.Storer[[]byte]
-	Output       string
-	OutputData   store.Storer[[]byte]
-	Path         string               // path of the kform files
-	ResourceData store.Storer[[]byte] // this providers resource externally w/o having to parse from a filepath
-	DryRun       bool
-	Destroy      bool
-	AutoApprove  bool
+	Factory        util.Factory
+	PackageName    string
+	LocalInventory *unstructured.Unstructured
+	Input          string // used for none, file or dir
+	InputData      store.Storer[[]byte]
+	Output         string
+	OutputData     store.Storer[[]byte]
+	Path           string               // path of the kform files
+	ResourceData   store.Storer[[]byte] // this providers resource externally w/o having to parse from a filepath
+	DryRun         bool
+	Destroy        bool
+	AutoApprove    bool
 }
 
 func NewKformRunner(cfg *Config) Runner {
@@ -55,7 +58,16 @@ func (r *runner) Run(ctx context.Context) error {
 	log.Debug("run")
 
 	var err error
-	r.invManager, err = manager.New(ctx, r.cfg.Path, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
+	// get the local inventory file, which serves as a reference to lookup
+	// the inventory in the cluster backend when it was not supplied
+	if r.cfg.LocalInventory == nil {
+		r.cfg.LocalInventory, err = config.GetInventoryInfo(r.cfg.Path)
+		if err != nil {
+			return err
+		}
+	}
+
+	r.invManager, err = manager.New(ctx, r.cfg.LocalInventory, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
 	if err != nil {
 		return err
 	}

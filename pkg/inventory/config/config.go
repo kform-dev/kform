@@ -154,15 +154,19 @@ func InventoryPath(path string) string {
 }
 
 func GetInventoryInfo(path string) (*unstructured.Unstructured, error) {
-	var u *unstructured.Unstructured
 	invPath := InventoryPath(path)
 	if !fsys.FileExists(invPath) {
-		return u, fmt.Errorf("run kform init, inventory path not exist: %s", invPath)
+		return nil, fmt.Errorf("run kform init, inventory path not exist: %s", invPath)
 	}
 	b, err := os.ReadFile(invPath)
 	if err != nil {
-		return u, fmt.Errorf("run kform init, cannot read inv file: %s, err: %s", invPath, err.Error())
+		return nil, fmt.Errorf("run kform init, cannot read inv file: %s, err: %s", invPath, err.Error())
 	}
+	return ParseInventoryFile(b)
+}
+
+func ParseInventoryFile(b []byte) (*unstructured.Unstructured, error) {
+	var u *unstructured.Unstructured
 	if err := yaml.Unmarshal(b, &u); err != nil {
 		return u, err
 	}

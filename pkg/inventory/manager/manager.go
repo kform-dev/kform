@@ -8,7 +8,6 @@ import (
 	invv1alpha1 "github.com/kform-dev/kform/apis/inv/v1alpha1"
 	"github.com/kform-dev/kform/pkg/data"
 	"github.com/kform-dev/kform/pkg/inventory/client"
-	"github.com/kform-dev/kform/pkg/inventory/config"
 	"github.com/kform-dev/kform/pkg/inventory/policy"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/kubectl/pkg/cmd/util"
@@ -24,14 +23,7 @@ type Manager interface {
 	// ActuateInventory
 }
 
-func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.ActuationStrategy) (Manager, error) {
-	// get the local inventory file, which serves as a reference to lookup
-	// the inventory in the cluster backend
-	localInventory, err := config.GetInventoryInfo(path)
-	if err != nil {
-		return nil, err
-	}
-
+func New(ctx context.Context, inv *unstructured.Unstructured, f util.Factory, strategy invv1alpha1.ActuationStrategy) (Manager, error) {
 	// create a client to interact with the cluster backend
 	client, err := client.ClusterClientFactory{StatusPolicy: policy.StatusPolicyNone}.NewClient(f)
 	if err != nil {
@@ -40,7 +32,7 @@ func New(ctx context.Context, path string, f util.Factory, strategy invv1alpha1.
 
 	r := &manager{
 		client:         client,
-		localInventory: localInventory,
+		localInventory: inv,
 		strategy:       strategy,
 	}
 	return r, nil
