@@ -96,7 +96,7 @@ func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 		pkgv1alpha1.PackageRevisionStatus{},
 	)
 
-	resources, err := cachedRepo.GetResources(ctx, pkgRev, false)
+	resources, err := cachedRepo.GetResources(ctx, pkgRev)
 	if err != nil {
 		return datastore, err
 	}
