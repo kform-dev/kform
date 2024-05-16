@@ -24,7 +24,7 @@ import (
 	"github.com/henderiw/store"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/auth/ui"
 	"github.com/pkgserver-dev/pkgserver/pkg/git/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +40,7 @@ type GitWriter struct {
 	// Directory used in the git repository as an offset
 	Directory string
 	// PackageID identifies target, repo, realm, package, workspace and revision (if assigned)
-	PkgID *pkgid.PackageID
+	PkgRevID *pkgrevid.PackageRevID
 	// PkgPath identifies the localation of the package in the local filesystem
 	PkgPath string
 }
@@ -60,7 +60,7 @@ func (r *GitWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) e
 	repo := configv1alpha1.BuildRepository(
 		metav1.ObjectMeta{
 			Namespace: "default",
-			Name:      r.PkgID.Repository,
+			Name:      r.PkgRevID.Repository,
 		},
 		configv1alpha1.RepositorySpec{
 			Type: configv1alpha1.RepositoryTypeGit,
@@ -84,10 +84,10 @@ func (r *GitWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) e
 	pkgRev := pkgv1alpha1.BuildPackageRevision(
 		metav1.ObjectMeta{
 			Namespace: "default",
-			Name:      r.PkgID.PkgRevString(),
+			Name:      r.PkgRevID.PkgRevString(),
 		},
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID:    *r.PkgID,
+			PackageRevID: *r.PkgRevID,
 			Lifecycle:    pkgv1alpha1.PackageRevisionLifecycleDraft,
 			UpdatePolicy: pkgv1alpha1.UpdatePolicy_Strict,
 		},

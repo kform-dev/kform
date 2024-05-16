@@ -24,7 +24,7 @@ import (
 	memstore "github.com/henderiw/store/memory"
 	configv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/config/v1alpha1"
 	pkgv1alpha1 "github.com/pkgserver-dev/pkgserver/apis/pkg/v1alpha1"
-	"github.com/pkgserver-dev/pkgserver/apis/pkgid"
+	"github.com/pkgserver-dev/pkgserver/apis/pkgrevid"
 	"github.com/pkgserver-dev/pkgserver/pkg/auth/ui"
 	"github.com/pkgserver-dev/pkgserver/pkg/git/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +40,7 @@ type GitReader struct {
 	// Directory used in the git repository as an offset
 	Directory string
 	// PackageID identifies target, repo, realm, package, workspace and revision (if assigned)
-	PkgID *pkgid.PackageID
+	PkgRevID *pkgrevid.PackageRevID
 	// PkgPath identifies the localation of the package in the local filesystem
 	PkgPath string
 	// allows the consumer to specify its own data store
@@ -59,7 +59,7 @@ func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 	repo := configv1alpha1.BuildRepository(
 		metav1.ObjectMeta{
 			Namespace: "default",
-			Name:      r.PkgID.Repository,
+			Name:      r.PkgRevID.Repository,
 		},
 		configv1alpha1.RepositorySpec{
 			Type: configv1alpha1.RepositoryTypeGit,
@@ -80,18 +80,18 @@ func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 		return datastore, err
 	}
 	lifecycle := pkgv1alpha1.PackageRevisionLifecycleDraft
-	if r.PkgID.Revision != "" {
+	if r.PkgRevID.Revision != "" {
 		lifecycle = pkgv1alpha1.PackageRevisionLifecyclePublished
 	}
 
 	pkgRev := pkgv1alpha1.BuildPackageRevision(
 		metav1.ObjectMeta{
 			Namespace: "default",
-			Name:      r.PkgID.PkgRevString(),
+			Name:      r.PkgRevID.PkgRevString(),
 		},
 		pkgv1alpha1.PackageRevisionSpec{
-			PackageID: *r.PkgID,
-			Lifecycle: lifecycle,
+			PackageRevID: *r.PkgRevID,
+			Lifecycle:    lifecycle,
 		},
 		pkgv1alpha1.PackageRevisionStatus{},
 	)
