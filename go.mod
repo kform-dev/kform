@@ -6,7 +6,7 @@ replace k8s.io/kubectl => k8s.io/kubectl v0.28.6
 
 require (
 	github.com/apparentlymart/go-versions v1.0.2
-	github.com/google/cel-go v0.18.2
+	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
