@@ -11,10 +11,12 @@ builds:
   main: cmd/kform/main.go
   env:
     - CGO_ENABLED=0
+  ldflags:
+      - -s -w -X github.com/kform-dev/kform/cmd.kform.commands.version={{.Version}} -X github.com/kform-dev/kform/cmd.kform.commands.commit={{.ShortCommit}} -X github.com/kform-dev/kform/cmd.kform.commands.date={{.Date}}
   goos:
     - darwin
-    #- freebsd
     - linux
+    #- freebsd
     #- openbsd
     #- windows
   goarch:
@@ -37,7 +39,15 @@ checksum:
 archives:
 - format: tar.gz
   # this name template makes the OS and Arch compatible with the results of `uname`.
-  name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
+  name_template: >-
+    {{ .ProjectName }}_
+    {{- replace .Version "v" "" }}_
+    {{- .Os }}_
+    {{- if eq .Arch "amd64" }}x86_64
+    {{- else if eq .Arch "386" }}i386
+    {{- else if eq .Arch "arm" }}armv7
+    {{- else if eq .Arch "arm64" }}aarch64
+    {{- else }}{{ .Arch }}{{ end }}
   files:
   - none*
   # use zip for windows archives

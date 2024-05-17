@@ -84,6 +84,7 @@ func GetMain(ctx context.Context) *cobra.Command {
 		//updateHelp(names, subCmd)
 		cmd.AddCommand(subCmd)
 	}
+	cmd.AddCommand(GetVersionCommand(ctx))
 	return cmd
 }
 
