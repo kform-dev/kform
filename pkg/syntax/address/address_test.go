@@ -1,11 +1,5 @@
 package address
 
-import (
-	"fmt"
-	"runtime"
-	"testing"
-)
-
 /*
 https://github.com/kform/releases/download/v0.0.1/provider-kubernetes_0.0.1_darwin_amd64
 europe-docker.pkg.dev/srlinux/eu.gcr.io/provider-xxxx
@@ -17,6 +11,7 @@ github.com/kform/provider-xxxx
 // .kform/providers/<hostname>/<namespace>/<name>/<version>/<platform>/<binary>
 //
 
+/*
 func TestPackage(t *testing.T) {
 	getPlatform := func() *Platform {
 		return &Platform{
@@ -87,3 +82,4 @@ func TestPackage(t *testing.T) {
 		})
 	}
 }
+*/

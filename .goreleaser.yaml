@@ -12,7 +12,7 @@ builds:
   env:
     - CGO_ENABLED=0
   ldflags:
-      - -s -w -X github.com/kform-dev/kform/cmd.kform.commands.version={{.Version}} -X github.com/kform-dev/kform/cmd.kform.commands.commit={{.ShortCommit}} -X github.com/kform-dev/kform/cmd.kform.commands.date={{.Date}}
+      - -s -w -X github.com/kform-dev/kform/cmd/kform/commands.version={{.Version}} -X github.com/kform-dev/kform/cmd/kform/commands.commit={{.ShortCommit}} -X github.com/kform-dev/kform/cmd.kform.commands.date={{.Date}}
   goos:
     - darwin
     - linux
