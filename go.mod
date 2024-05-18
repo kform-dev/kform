@@ -8,12 +8,15 @@ require (
 	github.com/apparentlymart/go-versions v1.0.2
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
+	github.com/google/go-containerregistry v0.19.1
 	github.com/google/uuid v1.6.0
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
 	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
 	github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d
 	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e
+	github.com/opencontainers/image-spec v1.1.0
+	github.com/oras-project/oras-credentials-go v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkgserver-dev/pkgserver v0.0.4
 	github.com/spf13/cobra v1.8.0
@@ -24,6 +27,7 @@ require (
 	k8s.io/cli-runtime v0.30.1
 	k8s.io/client-go v0.30.1
 	k8s.io/kubectl v0.30.1
+	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/cli-utils v0.36.0
 	sigs.k8s.io/kustomize/kyaml v0.17.0
 	sigs.k8s.io/yaml v1.4.0
@@ -43,6 +47,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
@@ -77,6 +82,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
+	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -92,6 +98,7 @@ require (
 	github.com/oklog/run v1.1.0 // indirect
 	github.com/onsi/ginkgo/v2 v2.17.1 // indirect
 	github.com/onsi/gomega v1.32.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -104,6 +111,7 @@ require (
 	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
+	github.com/vbatts/tar-split v0.11.3 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.opentelemetry.io/otel v1.20.0 // indirect

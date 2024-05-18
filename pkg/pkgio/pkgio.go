@@ -42,7 +42,6 @@ type Process[T1 any] interface {
 	Process(context.Context, store.Storer[T1]) (store.Storer[T1], error)
 }
 
-/*
 type Pipeline[T1 any] struct {
 	Inputs     []Reader[T1]  `json:"inputs,omitempty" yaml:"inputs,omitempty"`
 	Processors []Process[T1] `json:"processors,omitempty" yaml:"processors,omitempty"`
@@ -50,31 +49,28 @@ type Pipeline[T1 any] struct {
 }
 
 func (r Pipeline[T1]) Execute(ctx context.Context) error {
-	data := memory.NewStore[T1]()
+	var data store.Storer[T1]
 	var err error
 	// read from the inputs
 	for _, i := range r.Inputs {
-		newData, err = i.Read(ctx)
+		data, err = i.Read(ctx)
 		if err != nil {
 			return err
 		}
 		// copy the data
 
 	}
-	//data.Print()
 	for _, p := range r.Processors {
-		data, err = p.Process(ctx)
+		data, err = p.Process(ctx, data)
 		if err != nil {
 			return err
 		}
 	}
-	//data.Print()
 	// write to the outputs
 	for _, o := range r.Outputs {
-		if err := o.Write(ctx); err != nil {
+		if err := o.Write(ctx, data); err != nil {
 			return err
 		}
 	}
 	return nil
 }
-*/

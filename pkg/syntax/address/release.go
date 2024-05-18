@@ -34,15 +34,16 @@ func (r *Release) GetImageData(ctx context.Context) (Images, error) {
 		if asset.ContentType == "application/gzip" && asset.State == "uploaded" {
 			rawAssetName := strings.TrimSuffix(asset.Name, ".tar.gz")
 			split := strings.Split(rawAssetName, "_")
-			if len(split) != 3 {
-				log.Error("wrong release name: expecting <name>_<os>_<arch>", "got", rawAssetName)
+			if len(split) != 4 {
+				log.Error("wrong release name: expecting <name>_<version>_<os>_<arch>", "got", rawAssetName)
 				return images, fmt.Errorf("wrong release name: expecting <name>_<os>_<arch>, got: %s", rawAssetName)
 			}
 			images = append(images, Image{
 				Name: asset.Name,
+				Version: split[1],
 				Platform: Platform{
-					OS:   split[1],
-					Arch: split[2],
+					OS:   split[2],
+					Arch: split[3],
 				},
 				URL: asset.BrowserDownloadURL,
 			})
