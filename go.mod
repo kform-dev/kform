@@ -2,6 +2,8 @@ module github.com/kform-dev/kform
 
 go 1.22.2
 
+replace k8s.io/kubectl => k8s.io/kubectl v0.28.6
+
 require (
 	github.com/apparentlymart/go-versions v1.0.2
 	github.com/google/cel-go v0.20.1
