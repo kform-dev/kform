@@ -2,8 +2,6 @@ module github.com/kform-dev/kform
 
 go 1.22.2
 
-replace k8s.io/kubectl => k8s.io/kubectl v0.28.6
-
 require (
 	github.com/apparentlymart/go-versions v1.0.2
 	github.com/google/cel-go v0.20.1
@@ -18,7 +16,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/oras-project/oras-credentials-go v0.4.0
 	github.com/pkg/errors v0.9.1
-	github.com/pkgserver-dev/pkgserver v0.0.4
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -26,7 +23,7 @@ require (
 	k8s.io/apimachinery v0.30.1
 	k8s.io/cli-runtime v0.30.1
 	k8s.io/client-go v0.30.1
-	k8s.io/kubectl v0.30.1
+	k8s.io/kubectl v0.28.6
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/cli-utils v0.36.0
 	sigs.k8s.io/kustomize/kyaml v0.17.0

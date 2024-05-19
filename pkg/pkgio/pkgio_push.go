@@ -18,13 +18,13 @@ package pkgio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
-	"errors"
 
 	"github.com/henderiw/logger/log"
 	"github.com/henderiw/store"

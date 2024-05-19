@@ -39,7 +39,7 @@ func (r *Release) GetImageData(ctx context.Context) (Images, error) {
 				return images, fmt.Errorf("wrong release name: expecting <name>_<os>_<arch>, got: %s", rawAssetName)
 			}
 			images = append(images, Image{
-				Name: asset.Name,
+				Name:    asset.Name,
 				Version: split[1],
 				Platform: Platform{
 					OS:   split[2],
