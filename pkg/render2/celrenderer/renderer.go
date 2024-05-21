@@ -120,12 +120,12 @@ func (r *renderer) RenderString(ctx context.Context, expr string) (any, error) {
 		}
 		ast, iss := env.Compile(expr)
 		if iss.Err() != nil {
-			log.Error("compile env to ast failed", "error", iss.Err())
+			log.Error("compile env to ast failed", "expr", expr, "error", iss.Err())
 			return nil, err
 		}
 		_, err = cel.AstToCheckedExpr(ast)
 		if err != nil {
-			log.Error("ast to checked expression failed", "error", err)
+			log.Error("ast to checked expression failed", "expr", expr, "error", err)
 			return nil, err
 		}
 		prog, err := env.Program(ast,
@@ -134,7 +134,7 @@ func (r *renderer) RenderString(ctx context.Context, expr string) (any, error) {
 			//cel.OptimizeRegex(library.ExtensionLibRegexOptimizations...),
 		)
 		if err != nil {
-			log.Error("env program failed", "expression", expr, "error", err)
+			log.Error("env program failed", "expr", expr, "error", err)
 			return nil, err
 		}
 
