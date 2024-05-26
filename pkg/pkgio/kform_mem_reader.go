@@ -47,7 +47,7 @@ func (r *KformMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 	if r.Data != nil {
 		r.Data.List(ctx, func(ctx context.Context, k store.Key, b []byte) {
 			// only look at yaml files
-			if match, err := MatchFilesGlob(YAMLMatch).shouldSkipFile(k.Name); err != nil {
+			if match, err := MatchFilesGlob(YAMLMatch).ShouldSkipFile(k.Name); err != nil {
 				errors.Join(errm, err)
 				return
 			} else if match {
@@ -74,7 +74,7 @@ func (r *KformMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 		data := data
 		path := path
 		// only look at yaml files
-		if match, err := MatchFilesGlob(YAMLMatch).shouldSkipFile(path); err != nil {
+		if match, err := MatchFilesGlob(YAMLMatch).ShouldSkipFile(path); err != nil {
 			errors.Join(errm, err)
 			continue
 		} else if match {

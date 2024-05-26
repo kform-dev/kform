@@ -103,7 +103,7 @@ func (r *DirReader) getPaths(ctx context.Context) ([]string, error) {
 			return nil
 		}
 		// process glob
-		if match, err := r.MatchFilesGlob.shouldSkipFile(path); err != nil {
+		if match, err := r.MatchFilesGlob.ShouldSkipFile(path); err != nil {
 			return err
 		} else if match {
 			// skip the file
@@ -119,7 +119,7 @@ func (r *DirReader) getPaths(ctx context.Context) ([]string, error) {
 
 type MatchFilesGlob []string
 
-func (m MatchFilesGlob) shouldSkipFile(path string) (bool, error) {
+func (m MatchFilesGlob) ShouldSkipFile(path string) (bool, error) {
 	for _, g := range m {
 		g := g
 		if match, err := filepath.Match(g, filepath.Base(path)); err != nil {

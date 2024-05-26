@@ -34,7 +34,7 @@ type KformFileReader struct {
 }
 
 func (r *KformFileReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
-	if match, err := MatchFilesGlob(YAMLMatch).shouldSkipFile(r.Path); err != nil {
+	if match, err := MatchFilesGlob(YAMLMatch).ShouldSkipFile(r.Path); err != nil {
 		return nil, fmt.Errorf("not a yaml file, err: %s", err.Error())
 	} else if match {
 		return nil, fmt.Errorf("not a yaml file")
