@@ -29,7 +29,7 @@ require (
 	k8s.io/kubectl v0.30.1
 	oras.land/oras-go/v2 v2.5.0
 	sigs.k8s.io/cli-utils v0.36.0
-	sigs.k8s.io/kustomize/kyaml v0.17.0
+	sigs.k8s.io/kustomize/kyaml v0.17.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
