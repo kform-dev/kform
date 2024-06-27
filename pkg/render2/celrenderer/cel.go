@@ -36,7 +36,6 @@ func IsCelExpression(s string) (bool, error) {
 
 func getCelEnv(vars map[string]any) (*cel.Env, error) {
 	var opts []cel.EnvOption
-	opts = append(opts, cel.HomogeneousAggregateLiterals())
 	opts = append(opts, cel.EagerlyValidateDeclarations(true), cel.DefaultUTCTimeZone(true))
 	//opts = append(opts, library.ExtensionLibs...)
 
