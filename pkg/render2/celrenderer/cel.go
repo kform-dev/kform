@@ -36,6 +36,7 @@ func IsCelExpression(s string) (bool, error) {
 
 func getCelEnv(vars map[string]any) (*cel.Env, error) {
 	var opts []cel.EnvOption
+	opts = append(opts, cel.HomogeneousAggregateLiterals())
 	opts = append(opts, cel.EagerlyValidateDeclarations(true), cel.DefaultUTCTimeZone(true))
 	//opts = append(opts, library.ExtensionLibs...)
 
@@ -57,6 +58,18 @@ func getCelEnv(vars map[string]any) (*cel.Env, error) {
 			}),
 		),
 	))
+	opts = append(opts, cel.Function("split",
+		cel.MemberOverload("string_split_string",
+			[]*cel.Type{cel.StringType,
+				cel.StringType},
+			cel.ListType(cel.StringType),
+			cel.BinaryBinding(func(str, separator ref.Val) ref.Val {
+				s := str.(types.String)
+				sep := separator.(types.String)
+				return listStringOrError(split(string(s), string(sep)))
+			}),
+		),
+	))
 	opts = append(opts, Lists())
 
 	return cel.NewEnv(opts...)
@@ -67,14 +80,12 @@ func concat(strs traits.Lister, separator string) (string, error) {
 	sz := strs.Size().(types.Int)
 	var sb strings.Builder
 	for i := types.Int(0); i < sz; i++ {
-		fmt.Println("wimconcat", i)
 		if i != 0 {
 			sb.WriteString(separator)
 		}
 		elem := strs.Get(i)
 		str, ok := elem.(types.String)
 		if !ok {
-			fmt.Println("wimconcat", str)
 			str = types.String(fmt.Sprintf("%v", elem))
 		}
 		sb.WriteString(string(str))
@@ -87,6 +98,17 @@ func stringOrError(str string, err error) ref.Val {
 		return types.NewErr(err.Error())
 	}
 	return types.String(str)
+}
+
+func listStringOrError(strs []string, err error) ref.Val {
+	if err != nil {
+		return types.NewErr(err.Error())
+	}
+	return types.DefaultTypeAdapter.NativeToValue(strs)
+}
+
+func split(str, sep string) ([]string, error) {
+	return strings.Split(str, sep), nil
 }
 
 func Lists() cel.EnvOption {
