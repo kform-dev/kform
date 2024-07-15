@@ -169,6 +169,12 @@ func (r *ExecHandler) getLoopItems(ctx context.Context, attr *kformv1alpha1.Attr
 			}
 			log.Debug("getLoopItems forEach render output", "value type", reflect.TypeOf(v), "value", v)
 			switch v := v.(type) {
+			case []string:
+				// in a list we return key = int, val = any
+				for k, v := range v {
+					log.Debug("getLoopItems forEach insert item", "k", k, "v", v)
+					items.Add(k, item{key: k, val: v})
+				}
 			case []any:
 				// in a list we return key = int, val = any
 				for k, v := range v {
