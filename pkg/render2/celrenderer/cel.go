@@ -57,6 +57,37 @@ func getCelEnv(vars map[string]any) (*cel.Env, error) {
 			}),
 		),
 	))
+	// # Split
+	//
+	// Returns a list of strings split from the input by the given separator. The function accepts
+	// an optional argument specifying a limit on the number of substrings produced by the split.
+	//
+	// When the split limit is 0, the result is an empty list. When the limit is 1, the result is the
+	// target string to split. When the limit is a negative number, the function behaves the same as
+	// split all.
+	//
+	//	<string>.split(<string>) -> <list<string>>
+	//	<string>.split(<string>, <int>) -> <list<string>>
+	//
+	// Examples:
+	//
+	//	'hello hello hello'.split(' ')     // returns ['hello', 'hello', 'hello']
+	//	'hello hello hello'.split(' ', 0)  // returns []
+	//	'hello hello hello'.split(' ', 1)  // returns ['hello hello hello']
+	//	'hello hello hello'.split(' ', 2)  // returns ['hello', 'hello hello']
+	//	'hello hello hello'.split(' ', -1) // returns ['hello', 'hello', 'hello']
+	opts = append(opts, cel.Function("split",
+		cel.MemberOverload("string_split_string",
+			[]*cel.Type{cel.StringType,
+				cel.StringType},
+			cel.ListType(cel.StringType),
+			cel.BinaryBinding(func(str, separator ref.Val) ref.Val {
+				s := str.(types.String)
+				sep := separator.(types.String)
+				return listStringOrError(split(string(s), string(sep)))
+			}),
+		),
+	))
 	opts = append(opts, Lists())
 
 	return cel.NewEnv(opts...)
@@ -67,14 +98,12 @@ func concat(strs traits.Lister, separator string) (string, error) {
 	sz := strs.Size().(types.Int)
 	var sb strings.Builder
 	for i := types.Int(0); i < sz; i++ {
-		fmt.Println("wimconcat", i)
 		if i != 0 {
 			sb.WriteString(separator)
 		}
 		elem := strs.Get(i)
 		str, ok := elem.(types.String)
 		if !ok {
-			fmt.Println("wimconcat", str)
 			str = types.String(fmt.Sprintf("%v", elem))
 		}
 		sb.WriteString(string(str))
@@ -87,6 +116,17 @@ func stringOrError(str string, err error) ref.Val {
 		return types.NewErr(err.Error())
 	}
 	return types.String(str)
+}
+
+func listStringOrError(strs []string, err error) ref.Val {
+	if err != nil {
+		return types.NewErr(err.Error())
+	}
+	return types.DefaultTypeAdapter.NativeToValue(strs)
+}
+
+func split(str, sep string) ([]string, error) {
+	return strings.Split(str, sep), nil
 }
 
 func Lists() cel.EnvOption {
