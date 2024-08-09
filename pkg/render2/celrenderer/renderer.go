@@ -18,7 +18,6 @@ package celrenderer
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -127,8 +126,6 @@ func (r *renderer) RenderString(ctx context.Context, expr string) (any, error) {
 		}
 		log.Debug("expression", "expr", expr)
 		log.Debug("expression", "vars", newVars)
-		fmt.Println("expression expr", expr)
-		fmt.Println("expression vars", newVars)
 		env, err := getCelEnv(newVars)
 		if err != nil {
 			log.Error("cel environment failed", "error", err)

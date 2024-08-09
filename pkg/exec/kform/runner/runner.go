@@ -27,18 +27,18 @@ type Runner interface {
 }
 
 type Config struct {
-	Factory        util.Factory
-	PackageName    string
-	LocalInventory *unstructured.Unstructured
-	Input          string // used for none, file or dir
-	InputData      store.Storer[[]byte]
-	Output         string
-	OutputData     store.Storer[[]byte]
-	Path           string               // path of the kform files
-	ResourceData   store.Storer[[]byte] // this providers resource externally w/o having to parse from a filepath
-	DryRun         bool
-	Destroy        bool
-	AutoApprove    bool
+	Factory      util.Factory
+	PackageName  string
+	Input        string // used for none, file or dir
+	InputData    store.Storer[[]byte]
+	Output       string
+	OutputData   store.Storer[[]byte]
+	Path         string               // path of the kform files
+	ResourceData store.Storer[[]byte] // this providers resource externally w/o having to parse from a filepath
+	DryRun       bool
+	Destroy      bool
+	AutoApprove  bool
+	InventoryID  string
 }
 
 func NewKformRunner(cfg *Config) Runner {
@@ -60,14 +60,17 @@ func (r *runner) Run(ctx context.Context) error {
 	var err error
 	// get the local inventory file, which serves as a reference to lookup
 	// the inventory in the cluster backend when it was not supplied
-	if r.cfg.LocalInventory == nil {
-		r.cfg.LocalInventory, err = config.GetInventoryInfo(r.cfg.Path)
+	var localInventory *unstructured.Unstructured
+	if r.cfg.InventoryID != "" {
+		localInventory = config.GetFakeInventoryInfo(r.cfg.InventoryID)
+	} else {
+		localInventory, err = config.GetInventoryInfo(r.cfg.Path)
 		if err != nil {
 			return err
 		}
 	}
 
-	r.invManager, err = manager.New(ctx, r.cfg.LocalInventory, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
+	r.invManager, err = manager.New(ctx, localInventory, r.cfg.Factory, invv1alpha1.ActuationStrategyApply)
 	if err != nil {
 		return err
 	}

@@ -33,11 +33,5 @@ metadata:
   # NOTE: The name of the inventory object does NOT have
   # any impact on group-related functionality such as
   # deletion or pruning.
-  name: inventory-<RANDOMSUFFIX>
-  labels:
-    # DANGER: Do not change the value of this label.
-    # Changing this value will cause a loss of continuity
-    # with previously applied grouped objects. Set deletion
-    # and pruning functionality will be impaired.
-    <INVENTORYKEY>: <INVENTORYID>
+  name: inventory-<INVENTORYID>
 `
