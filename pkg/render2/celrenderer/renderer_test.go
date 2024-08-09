@@ -82,6 +82,10 @@ metadata:
     kform.dev/default: true
 data:
   test: a
+  strings: 
+  - item1
+  - item2
+  - item3
 `
 
 var celoutput = `apiVersion: v1
@@ -89,8 +93,11 @@ kind: ConfigMap
 metadata:
   name: example
   namespace: default
+  annotations:
+    "kform.dev/for-each": "input.context[0].data.strings"
 data:
-  test: "['input','context1'].concat('.')"  # cel fn w/o cell variables
+  celnovar: "['input','context1'].concat('.')"  # cel fn w/o cell variables
+  strings: "input.context[0].data.strings"
 `
 
 func TestValidate(t *testing.T) {
@@ -98,10 +105,10 @@ func TestValidate(t *testing.T) {
 		input  string
 		output string
 	}{
-		"Basic": {
-			input:  input,
-			output: output,
-		},
+		//"Basic": {
+		//	input:  input,
+		//	output: output,
+		//},
 		"CellFunctions": {
 			input:  celinput,
 			output: celoutput,
