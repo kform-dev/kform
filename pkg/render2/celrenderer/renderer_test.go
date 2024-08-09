@@ -71,14 +71,40 @@ spec:
         image: input.context[0].data.dataServer.image
 `
 
+var celinput = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example
+  namespace: default
+  annotations:
+    kform.dev/block-type: input
+    kform.dev/resource-id: context ## this serves as a way to add default and manage the merge
+    kform.dev/default: true
+data:
+  test: a
+`
+
+var celoutput = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: example
+  namespace: default
+data:
+  test: "['input','context1'].concat('.')"  # cel fn w/o cell variables
+`
+
 func TestValidate(t *testing.T) {
 	cases := map[string]struct {
 		input  string
 		output string
 	}{
-		"Test": {
+		"Basic": {
 			input:  input,
 			output: output,
+		},
+		"CellFunctions": {
+			input:  celinput,
+			output: celoutput,
 		},
 	}
 

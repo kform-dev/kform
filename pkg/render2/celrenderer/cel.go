@@ -18,7 +18,6 @@ package celrenderer
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/google/cel-go/cel"
@@ -26,13 +25,8 @@ import (
 	"github.com/google/cel-go/common/types/ref"
 	"github.com/google/cel-go/common/types/traits"
 	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
+	//"k8s.io/apiextensions-apiserver/pkg/apiserver/schema/cel/library"
 )
-
-const specialCharExpr = "[$&+,:;=?@#|'<>-^*()%!]"
-
-func IsCelExpression(s string) (bool, error) {
-	return regexp.MatchString(specialCharExpr, s)
-}
 
 func getCelEnv(vars map[string]any) (*cel.Env, error) {
 	var opts []cel.EnvOption
