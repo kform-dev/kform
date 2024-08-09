@@ -1,34 +1,5 @@
 package v1alpha1
 
-/*
-data:
-  providers:
-	kubernetes:
-	  config:
-		apiVersion: kubernetes.provider.kform.dev/v1alpha1
-		kind: ProviderConfig
-		metadata:
-			name: kubernetes
-			namespace: default
-			annotations:
-				kform.dev/block-type: provider
-		spec:
-			configPath: "~/.kube/config"
-  packages:
-	root:
-	  kubernetes_manifest.bla:
-		resources:
-		- ref:
-		    group
-			kind
-			namespace
-			name
-		  status:
-		    strategy:
-			actuation:
-			reconcile:
-*/
-
 // Non Goal: expose execution context
 // Goal
 // Expose the cluster resources that were applied to the system

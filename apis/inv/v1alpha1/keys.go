@@ -10,17 +10,4 @@ const (
 
 	// InventoryOwnerKey is the annotation key indicating the inventory owning an object.
 	InventoryOwnerKey = "inv.kform.dev/inventory-owner"
-
-	// LifecycleDeletionAnnotation is the lifecycle annotation key for deletion operation.
-	//LifecycleDeleteAnnotation = "client.lifecycle.config.k8s.io/deletion"
-
-	// PreventDeletion is the value used with LifecycleDeletionAnnotation
-	// to prevent deleting a resource.
-	//PreventDeletion = "detach"
-
-	//OnRemoveAnnotation = "cli-utils.sigs.k8s.io/on-remove"
-	// Resource lifecycle annotation value to prevent deletion.
-
-	// Resource lifecycle annotation value to prevent deletion.
-	//OnRemoveKeep = "keep"
 )
