@@ -6,7 +6,7 @@ replace k8s.io/kubectl => k8s.io/kubectl v0.28.6
 
 require (
 	github.com/apparentlymart/go-versions v1.0.2
-	github.com/google/cel-go v0.18.2
+	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.0
 	github.com/google/uuid v1.6.0
@@ -76,7 +76,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79 // indirect
-	github.com/henderiw/apiserver-builder v0.0.2-0.20240222151136-8b4cddd205c5 // indirect
+	github.com/henderiw/apiserver-builder v0.0.2-0.20240414132730-35630f41575d // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

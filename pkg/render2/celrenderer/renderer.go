@@ -18,6 +18,7 @@ package celrenderer
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/google/cel-go/cel"
@@ -48,7 +49,14 @@ type renderer struct {
 	varStore  store.Storer[data.VarData]
 }
 
+const specialCharExpr = "[$&+,:;=?@#|'<>-^*()%!]"
+
+func isCelExpressionWithoutVariables(s string) (bool, error) {
+	return regexp.MatchString(specialCharExpr, s)
+}
+
 func (r *renderer) isCelExression(ctx context.Context, expr string) bool {
+	log := log.FromContext(ctx)
 	for _, ref := range r.varStore.ListKeys(ctx) {
 		if strings.Contains(expr, ref) {
 			return true
@@ -59,7 +67,12 @@ func (r *renderer) isCelExression(ctx context.Context, expr string) bool {
 			return true
 		}
 	}
-	return false
+	iscelexpr, err := isCelExpressionWithoutVariables(expr)
+	if err != nil {
+		log.Error("cel expression parsing failed", "error", err)
+		return false
+	}
+	return iscelexpr
 }
 
 // getNewVars returns a new variable context with the local variables and the
