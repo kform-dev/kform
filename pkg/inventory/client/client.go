@@ -25,7 +25,7 @@ type Client interface {
 	// GetClusterInventory returns the inventory, which consists of the providers with their
 	// resp. configs and the packages with their respective objRefs;
 	// or an error if one occurred.
-	GetClusterInventory(ctx context.Context, inv Info) (*invv1alpha1.Inventory, error)
+	GetClusterInventory(ctx context.Context, invName Info) (*invv1alpha1.Inventory, error)
 	// GetClusterInventoryInfo returns the cluster inventory object.
 	GetClusterInventoryInfo(ctx context.Context, inv Info) (*unstructured.Unstructured, error)
 

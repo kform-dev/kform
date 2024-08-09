@@ -88,7 +88,6 @@ func getCelEnv(vars map[string]any) (*cel.Env, error) {
 }
 
 func concat(strs traits.Lister, separator string) (string, error) {
-	fmt.Println("wimconcat")
 	sz := strs.Size().(types.Int)
 	var sb strings.Builder
 	for i := types.Int(0); i < sz; i++ {

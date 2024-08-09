@@ -16,8 +16,8 @@ import (
 	"github.com/kform-dev/kform/pkg/inventory/config/configmap"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"sigs.k8s.io/cli-utils/pkg/common"
 	"sigs.k8s.io/yaml"
+	//"sigs.k8s.io/cli-utils/pkg/common"
 )
 
 const (
@@ -139,11 +139,11 @@ func (r *Config) GetInventoryFileString() string {
 func (r *Config) fillInValues() string {
 	now := time.Now()
 	nowStr := now.Format("2006-01-02 15:04:05 MST")
-	randomSuffix := common.RandomStr()
+	//randomSuffix := common.RandomStr()
 	manifestStr := r.Template
 	manifestStr = strings.ReplaceAll(manifestStr, "<DATETIME>", nowStr)
 	manifestStr = strings.ReplaceAll(manifestStr, "<NAMESPACE>", r.Namespace)
-	manifestStr = strings.ReplaceAll(manifestStr, "<RANDOMSUFFIX>", randomSuffix)
+	//manifestStr = strings.ReplaceAll(manifestStr, "<RANDOMSUFFIX>", randomSuffix)
 	manifestStr = strings.ReplaceAll(manifestStr, "<INVENTORYID>", r.InventoryID)
 	manifestStr = strings.ReplaceAll(manifestStr, "<INVENTORYKEY>", invv1alpha1.InventoryLabelKey)
 	return manifestStr
@@ -171,4 +171,13 @@ func ParseInventoryFile(b []byte) (*unstructured.Unstructured, error) {
 		return u, err
 	}
 	return u, nil
+}
+
+func GetFakeInventoryInfo(inventoryID string) *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetAPIVersion("v1")
+	u.SetKind("ConfigMap")
+	u.SetName(inventoryID)
+	u.SetNamespace(kformInventoryNamespace)
+	return u
 }

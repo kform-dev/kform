@@ -36,6 +36,7 @@ func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericcliop
 	r.Command.Flags().BoolVar(&r.DryRun, "dry-run", false, "executes a speculative execution plan, without applying the resources")
 	r.Command.Flags().StringVarP(&r.Input, "in", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
 	r.Command.Flags().StringVarP(&r.Output, "out", "o", "", "a file or directory where the result is stored, a filename creates a single yaml doc; a dir creates seperated yaml files")
+	r.Command.Flags().StringVar(&r.InventoryID, "inventory-id", "", "iventory-id to identify the applied resources, use valid semantics")
 
 	return r
 }
@@ -47,6 +48,7 @@ type Runner struct {
 	DryRun      bool
 	Input       string
 	Output      string
+	InventoryID string
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
@@ -66,6 +68,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		Path:        path,
 		DryRun:      r.DryRun,
 		AutoApprove: r.AutoApprove,
+		InventoryID: r.InventoryID,
 	})
 
 	return kfrunner.Run(ctx)

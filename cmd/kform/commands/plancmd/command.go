@@ -35,6 +35,7 @@ func NewRunner(ctx context.Context, factory util.Factory, ioStreams genericcliop
 	r.Command.Flags().BoolVar(&r.Destroy, "destroy", false, "destroys resources managed by this plan")
 	r.Command.Flags().StringVarP(&r.Input, "in", "i", "", "a file or directory of KRM resource(s) that act as input rendering the package")
 	r.Command.Flags().StringVarP(&r.Output, "out", "o", "", "a file or directory where the result is stored, a filename creates a single yaml doc; a dir creates seperated yaml files")
+	r.Command.Flags().StringVar(&r.InventoryID, "inventory-id", "", "iventory-id to identify the applied resources, use valid semantics")
 
 	return r
 }
@@ -46,6 +47,7 @@ type Runner struct {
 	Destroy     bool
 	Input       string
 	Output      string
+	InventoryID string
 }
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
@@ -65,6 +67,7 @@ func (r *Runner) runE(c *cobra.Command, args []string) error {
 		Path:        path,
 		DryRun:      true,
 		Destroy:     r.Destroy,
+		InventoryID: r.InventoryID,
 	})
 
 	return kfrunner.Run(ctx)

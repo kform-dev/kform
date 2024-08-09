@@ -28,7 +28,7 @@ func NewRunner(ctx context.Context, ioStreams genericclioptions.IOStreams) *Runn
 	}
 
 	r.Command = cmd
-	r.Command.Flags().StringVarP(&r.InvConfig.InventoryID, "inventory-id", "i", "", "iventory-id listing the applied resources, use valid semantics")
+	r.Command.Flags().StringVarP(&r.InvConfig.InventoryID, "inventory-id", "i", "", "iventory-id to identify the applied resources, use valid semantics")
 	return r
 }
 
@@ -39,9 +39,14 @@ type Runner struct {
 
 func (r *Runner) runE(c *cobra.Command, args []string) error {
 	ctx := c.Context()
-	err := r.InvConfig.Complete(ctx, args[0])
-	if err != nil {
-		return err
+
+	if r.InvConfig.InventoryID == "" {
+		err := r.InvConfig.Complete(ctx, args[0])
+		if err != nil {
+			return err
+		}
+		return r.InvConfig.Run(ctx)
 	}
-	return r.InvConfig.Run(ctx)
+	return nil
+
 }
