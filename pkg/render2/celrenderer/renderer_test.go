@@ -81,7 +81,7 @@ metadata:
     kform.dev/resource-id: context ## this serves as a way to add default and manage the merge
     kform.dev/default: true
 data:
-  test: a
+  test: "a"
   strings: 
   - item1
   - item2
@@ -105,10 +105,10 @@ func TestValidate(t *testing.T) {
 		input  string
 		output string
 	}{
-		//"Basic": {
-		//	input:  input,
-		//	output: output,
-		//},
+		"Basic": {
+			input:  input,
+			output: output,
+		},
 		"CellFunctions": {
 			input:  celinput,
 			output: celoutput,

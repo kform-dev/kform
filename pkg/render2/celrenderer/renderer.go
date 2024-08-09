@@ -18,6 +18,7 @@ package celrenderer
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -49,7 +50,7 @@ type renderer struct {
 	varStore  store.Storer[data.VarData]
 }
 
-const specialCharExpr = "[$&+,:;=?@#|'<>-^*()%!]"
+const specialCharExpr = "[$&+,:;=?@#|'<>\\-^*()%!]"
 
 func isCelExpressionWithoutVariables(s string) (bool, error) {
 	return regexp.MatchString(specialCharExpr, s)
@@ -126,6 +127,8 @@ func (r *renderer) RenderString(ctx context.Context, expr string) (any, error) {
 		}
 		log.Debug("expression", "expr", expr)
 		log.Debug("expression", "vars", newVars)
+		fmt.Println("expression expr", expr)
+		fmt.Println("expression vars", newVars)
 		env, err := getCelEnv(newVars)
 		if err != nil {
 			log.Error("cel environment failed", "error", err)
