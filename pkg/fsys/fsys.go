@@ -74,9 +74,9 @@ func NewDiskFS(path string) FS {
 	}
 }
 
-func NewFS(fs fs.FS) FS {
+func NewFS(fs fs.FS, path string) FS {
 	return &fsys{
-		rootPath: ".",
+		rootPath: path,
 		fsys:     fs,
 	}
 }
