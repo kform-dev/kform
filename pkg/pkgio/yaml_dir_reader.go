@@ -38,7 +38,7 @@ type YAMLDirReader struct {
 func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
 	var fs fsys.FS
 	if r.Fsys != nil {
-		fs = fsys.NewDiskFS(r.Path)
+		fs = fsys.NewFS(r.Fsys)
 	} else {
 		fs = fsys.NewDiskFS(r.Path)
 	}
