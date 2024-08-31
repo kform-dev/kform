@@ -53,7 +53,6 @@ func GetMain(ctx context.Context) *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug")
 	// kubernetes flags
 	flags := cmd.PersistentFlags()
 	kubeConfigFlags := genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag()

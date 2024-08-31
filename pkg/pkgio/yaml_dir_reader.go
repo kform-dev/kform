@@ -19,6 +19,7 @@ package pkgio
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"sync"
 
 	"github.com/henderiw/store"
@@ -31,20 +32,26 @@ import (
 // only read yaml
 type YAMLDirReader struct {
 	Path string
+	Fsys fs.FS
 }
 
 func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
-	fsys := fsys.NewDiskFS(r.Path)
+	var fs fsys.FS
+	if r.Fsys != nil {
+		fs = fsys.NewDiskFS(r.Path)
+	} else {
+		fs = fsys.NewDiskFS(r.Path)
+	}
 
 	ignoreRules := ignore.Empty(IgnoreFileMatch[0])
-	f, err := fsys.Open(IgnoreFileMatch[0])
+	f, err := fs.Open(IgnoreFileMatch[0])
 	if err == nil {
 		// if an error is return the rules is empty, so we dont have to worry about the error
 		ignoreRules, _ = ignore.Parse(f)
 	}
 	dirReader := &DirReader{
 		Path:           r.Path,
-		Fsys:           fsys,
+		Fsys:           fs,
 		MatchFilesGlob: YAMLMatch,
 		IgnoreRules:    ignoreRules,
 		SkipDir:        true, // a package is contained within a single directory, recursion is not needed
@@ -63,7 +70,7 @@ func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], er
 		go func() {
 			defer wg.Done()
 			annotations := map[string]string{}
-			f, err := fsys.Open(path)
+			f, err := fs.Open(path)
 			if err != nil {
 				errors.Join(errm, err)
 				return

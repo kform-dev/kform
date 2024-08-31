@@ -51,7 +51,6 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 				if len(files[path]) == 0 {
 					files[path] = []store.Key{}
 				}
-
 				files[path] = append(files[path], store.KeyFromNSN(types.NamespacedName{
 					Namespace: fileIdx,
 					Name:      k.Name,
@@ -149,6 +148,7 @@ func (r *KformWriter) writeDir(ctx context.Context, keys []store.Key, datastore 
 			if err != nil {
 				return err
 			}
+			defer file.Close()
 			fmt.Fprintf(file, "---\n%s\n", rn.MustString())
 			file.Close()
 		}
