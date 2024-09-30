@@ -66,13 +66,13 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	log := log.FromContext(ctx).With("vertexContext", vctx.String())
 	log.Debug("run instance")
 	// create a new outputStore and varStore and an instance of the packageResources
-	newOutputStore := memory.NewStore[data.BlockData]()
-	newVarStore := memory.NewStore[data.VarData]()
-	newPkgResourceStore := memory.NewStore[data.BlockData]()
+	newOutputStore := memory.NewStore[data.BlockData](nil)
+	newVarStore := memory.NewStore[data.VarData](nil)
+	newPkgResourceStore := memory.NewStore[data.BlockData](nil)
 	if r.resources != nil {
 		// protection such that kform runs who dont request resources will not crash
 		// e.g. a provider run
-		r.resources.Create(ctx, store.ToKey(r.rootPackageName), newPkgResourceStore)
+		r.resources.Create(store.ToKey(r.rootPackageName), newPkgResourceStore)
 	}
 
 	// localVars represent the dynamic input data into the package/mixin
@@ -84,7 +84,7 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 		if !ok {
 			return fmt.Errorf("unexpected data, expecting *data.BlockData, got: %s", reflect.TypeOf(blockData).Name())
 		}
-		newVarStore.Update(ctx, store.ToKey(blockName), data)
+		newVarStore.Update(store.ToKey(blockName), data)
 	}
 
 	// TODO add warning when an inputresource is specified and its corresponding dag entry does not exist
@@ -118,9 +118,9 @@ func (r *pkg) Run(ctx context.Context, vctx *types.VertexContext, localVars map[
 	if success {
 		// copy the output from newOutputStore to outputStore
 		// Every package works independently, so this ensure isolation
-		newOutputStore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+		newOutputStore.List(func(k store.Key, bd data.BlockData) {
 			// TODO output prefix needs to be replaced with mixin.packagename.<outputvariable>
-			r.outputStore.Create(ctx, k, bd)
+			r.outputStore.Create(k, bd)
 		})
 	}
 	return nil

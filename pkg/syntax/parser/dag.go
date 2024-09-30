@@ -35,7 +35,7 @@ func (r *KformParser) generateProviderDAG(ctx context.Context, usedProviderConfi
 	}
 	rootPackage.GenerateDAG(ctx, true, usedProviderConfigs)
 	// update the module with the DAG in the cache
-	r.packages.Update(ctx, store.ToKey(r.rootPackageName), rootPackage)
+	r.packages.Update(store.ToKey(r.rootPackageName), rootPackage)
 }
 
 func (r *KformParser) generateDAG(ctx context.Context) {
@@ -48,7 +48,7 @@ func (r *KformParser) generateDAG(ctx context.Context) {
 			return
 		}
 		// update the module with the DAG in the cache
-		if err := r.packages.Update(ctx, store.ToKey(packageName), pkg); err != nil {
+		if err := r.packages.Update(store.ToKey(packageName), pkg); err != nil {
 			r.recorder.Record(diag.DiagFromErr(err))
 			return
 		}

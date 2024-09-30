@@ -36,7 +36,7 @@ type ByteWriter struct {
 func (r *ByteWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) error {
 
 	var errm error
-	datastore.List(ctx, func(ctx context.Context, key store.Key, b []byte) {
+	datastore.List(func(key store.Key, b []byte) {
 		switch r.Type {
 		case OutputSink_StdOut:
 			fmt.Fprintf(os.Stdout, "---\nfile: %s\n---\n%s\n", key.Name, string(b))

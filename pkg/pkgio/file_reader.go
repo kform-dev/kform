@@ -34,5 +34,5 @@ func (r *FileReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 		Checksum: r.Checksum,
 		Fsys:     r.Fsys,
 	}
-	return reader.readFileContent(ctx, []string{r.FileName})
+	return reader.readFileContent([]string{r.FileName})
 }

@@ -81,7 +81,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		// lookup the provider in the provider instances
 		// based on the blockType run either data or resource
 		// add the data in the variable
-		provider, err := r.providerInstances.Get(ctx, store.ToKey(vctx.Attributes.Provider))
+		provider, err := r.providerInstances.Get(store.ToKey(vctx.Attributes.Provider))
 		if err != nil {
 			log.Error("cannot get provider", "provider", vctx.Attributes.Provider, "error", err.Error())
 			return err
@@ -175,7 +175,7 @@ func (r *resource) Run(ctx context.Context, vctx *types.VertexContext, localVars
 				(r.kind == DagRunInventory && vctx.BlockType == kformv1alpha1.BlockTYPE_DATA) {
 
 				// get the pkgStore in which we store the resources actuated per package
-				pkgStore, err := r.resources.Get(ctx, store.ToKey(r.rootPackageName))
+				pkgStore, err := r.resources.Get(store.ToKey(r.rootPackageName))
 				if err != nil {
 					return err
 				}
@@ -273,7 +273,7 @@ type Resources struct {
 
 func (r Resources) GetItem(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) *unstructured.Unstructured {
 	log := log.FromContext(ctx)
-	pkgStore, err := r.Get(ctx, store.ToKey(pkgName))
+	pkgStore, err := r.Get(store.ToKey(pkgName))
 	if err != nil {
 		// not a worry as this means the package did not exist
 		return nil
@@ -292,7 +292,7 @@ func (r Resources) GetItem(ctx context.Context, pkgName, blockName string, rn *y
 
 func (r Resources) Delete(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) error {
 	// get the pkgStore in which we store the resources actuated per package
-	pkgStore, err := r.Get(ctx, store.ToKey(pkgName))
+	pkgStore, err := r.Get(store.ToKey(pkgName))
 	if err != nil {
 		// not a worry as this means the package did not exist
 		return nil

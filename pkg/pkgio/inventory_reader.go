@@ -16,7 +16,7 @@ type InventoryReader struct {
 }
 
 func (r *InventoryReader) Read(ctx context.Context, inv *invv1alpha1.Inventory) (store.Storer[[]byte], error) {
-	datastore := memory.NewStore[[]byte]()
+	datastore := memory.NewStore[[]byte](nil)
 	// TODO add multi-package support
 	usedProviders := sets.New[string]()
 	for _, pkgInv := range inv.Packages {
@@ -36,14 +36,14 @@ func (r *InventoryReader) Read(ctx context.Context, inv *invv1alpha1.Inventory) 
 				rn := obj.GetRnNode(kformv1alpha1.BlockTYPE_DATA.String(), resourceType, resourceID)
 
 				// we need to represent the resources as yaml files to please the kformReader
-				datastore.Create(ctx, store.ToKey(fmt.Sprintf("%s_%d.yaml", resource, idx)), []byte(rn.MustString()))
+				datastore.Create(store.ToKey(fmt.Sprintf("%s_%d.yaml", resource, idx)), []byte(rn.MustString()))
 			}
 		}
 	}
 	for provider, config := range inv.Providers {
 		if usedProviders.Has(provider) {
 			// we need to represent the resources as yaml files to please the kformReader
-			datastore.Create(ctx, store.ToKey(fmt.Sprintf("%s.yaml", provider)), []byte(config))
+			datastore.Create(store.ToKey(fmt.Sprintf("%s.yaml", provider)), []byte(config))
 		}
 
 	}

@@ -25,6 +25,7 @@ import (
 
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
@@ -40,12 +41,14 @@ type YAMLReader struct {
 
 	// allows the consumer to specify its own data store
 	DataStore store.Storer[*yaml.RNode]
+
+	MatchGVKs []schema.GroupVersionKind
 }
 
 func (r *YAMLReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
 	datastore := r.DataStore
 	if datastore == nil {
-		datastore = memory.NewStore[*yaml.RNode]()
+		datastore = memory.NewStore[*yaml.RNode](nil)
 	}
 
 	// by manually splitting resources -- otherwise the decoder will get the Resource
@@ -74,13 +77,25 @@ func (r *YAMLReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error
 		}
 		r.updateAnnotations(rn, i)
 
-		//datastore.Create(ctx, store.ToKey(fmt.Sprintf("%s.%d", r.Path, i)), rn)
+		filter := true
+		if len(r.MatchGVKs) == 0 {
+			filter = false
+		} else {
+			for _, gvk := range r.MatchGVKs {
+				if rn.GetApiVersion() == gvk.GroupVersion().Identifier() &&
+					rn.GetKind() == gvk.Kind {
+					filter = false
+				}
+			}
+		}
+		if !filter {
+			datastore.Create(store.KeyFromNSN(
+				types.NamespacedName{
+					Namespace: strconv.Itoa(i),
+					Name:      r.Path,
+				}), rn)
+		}
 
-		datastore.Create(ctx, store.KeyFromNSN(
-			types.NamespacedName{
-				Namespace: strconv.Itoa(i),
-				Name:      r.Path,
-			}), rn)
 	}
 
 	return datastore, nil

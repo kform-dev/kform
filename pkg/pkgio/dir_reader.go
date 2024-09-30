@@ -31,7 +31,7 @@ import (
 )
 
 type DirReader struct {
-	Path           string // dir
+	RelFsysPath    string // dir
 	Fsys           fsys.FS
 	MatchFilesGlob MatchFilesGlob
 	IgnoreRules    *ignore.Rules
@@ -40,7 +40,7 @@ type DirReader struct {
 }
 
 func (r *DirReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
-	datastore := memory.NewStore[[]byte]()
+	datastore := memory.NewStore[[]byte](nil)
 	paths, err := r.getPaths(ctx)
 	if err != nil {
 		return datastore, err
@@ -81,10 +81,14 @@ func (r *DirReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 
 func (r *DirReader) getPaths(ctx context.Context) ([]string, error) {
 	log := log.FromContext(ctx)
-	log.Debug("getPatchs")
+	log.Debug("getPaths")
 	// collect the paths
+	relativeFsysPath := "."
+	if r.RelFsysPath != "" {
+		relativeFsysPath = r.RelFsysPath
+	}
 	paths := []string{}
-	if err := r.Fsys.Walk(".", func(path string, d fs.DirEntry, err error) error {
+	if err := r.Fsys.Walk(relativeFsysPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

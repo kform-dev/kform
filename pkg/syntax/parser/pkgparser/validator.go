@@ -46,7 +46,7 @@ func (r *PackageParser) validate(ctx context.Context, kformDataStore store.Store
 		wg.Wait()
 	*/
 	var wg sync.WaitGroup
-	kformDataStore.List(ctx, func(ctx context.Context, key store.Key, rn *yaml.RNode) {
+	kformDataStore.List(func(key store.Key, rn *yaml.RNode) {
 		wg.Add(1)
 		go func(rn *yaml.RNode) {
 			defer wg.Done()

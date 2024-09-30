@@ -32,12 +32,12 @@ func (r *input) Run(ctx context.Context, vctx *types.VertexContext, localVars ma
 	// Dynamic input will already be initialized when calling the package/module,
 	// so we first check if the blockName exists, if not we initialize the block
 	// with the default block if it exists
-	if _, err := r.varStore.Get(ctx, store.ToKey(vctx.BlockName)); err != nil {
+	if _, err := r.varStore.Get(store.ToKey(vctx.BlockName)); err != nil {
 		varData, err := vctx.Data.GetVarData()
 		if err != nil {
 			return err
 		}
-		r.varStore.Create(ctx, store.ToKey(vctx.BlockName), varData)
+		r.varStore.Create(store.ToKey(vctx.BlockName), varData)
 		log.Debug("input", "value", vctx.Data)
 	}
 	log.Debug("run block instance finished...")

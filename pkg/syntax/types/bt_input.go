@@ -70,7 +70,7 @@ func (r *input) UpdatePackage(ctx context.Context) {
 	// checks if the blockName exists -> for blockType input this is allowed; since we can have multiple inputs
 	// with the same input name
 	// for other blockTypes this is not allowed, except for data to read inventory
-	block, err := pkg.Blocks.Get(ctx, store.ToKey(blockName))
+	block, err := pkg.Blocks.Get(store.ToKey(blockName))
 	if err != nil {
 		// block does not exist -> create
 		block, err = NewBlock(ctx, blockType, blockName, rn)
@@ -79,7 +79,7 @@ func (r *input) UpdatePackage(ctx context.Context) {
 			return
 		}
 		// checks for duplicate resources
-		if err := pkg.Blocks.Create(ctx, store.ToKey(blockName), block); err != nil {
+		if err := pkg.Blocks.Create(store.ToKey(blockName), block); err != nil {
 			r.recorder.Record(diag.DiagFromErrWithContext(
 				Context{ctx}.String(),
 				fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",

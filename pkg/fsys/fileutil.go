@@ -59,6 +59,15 @@ func IsDir(path string) bool {
 	return false
 }
 
+// PathExists returns true if the path already exists;
+// false otherwise.
+func PathExists(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		return false
+	}
+	return true
+}
+
 // fileExists returns true if a file at path already exists;
 // false otherwise.
 func FileExists(path string) bool {

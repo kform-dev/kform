@@ -26,21 +26,25 @@ import (
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/pkgio/ignore"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 // only read yaml
 type YAMLDirReader struct {
-	Path string
-	Fsys fs.FS
+	FsysPath    string
+	RelFsysPath string
+	Fsys        fs.FS
+	SkipDir     bool
+	MatchGVKs   []schema.GroupVersionKind
 }
 
 func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
 	var fs fsys.FS
 	if r.Fsys != nil {
-		fs = fsys.NewFS(r.Fsys, r.Path)
+		fs = fsys.NewFS(r.Fsys)
 	} else {
-		fs = fsys.NewDiskFS(r.Path)
+		fs = fsys.NewDiskFS(r.FsysPath)
 	}
 
 	ignoreRules := ignore.Empty(IgnoreFileMatch[0])
@@ -50,17 +54,17 @@ func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], er
 		ignoreRules, _ = ignore.Parse(f)
 	}
 	dirReader := &DirReader{
-		Path:           r.Path,
+		RelFsysPath:    r.RelFsysPath,
 		Fsys:           fs,
 		MatchFilesGlob: YAMLMatch,
 		IgnoreRules:    ignoreRules,
-		SkipDir:        true, // a package is contained within a single directory, recursion is not needed
+		SkipDir:        r.SkipDir,
 	}
 	paths, err := dirReader.getPaths(ctx)
 	if err != nil {
 		return nil, err
 	}
-	datastore := memory.NewStore[*yaml.RNode]()
+	datastore := memory.NewStore[*yaml.RNode](nil)
 	var errm error
 	var wg sync.WaitGroup
 	for _, path := range paths {
@@ -82,6 +86,7 @@ func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], er
 				Path:        path,
 				Annotations: annotations,
 				DataStore:   datastore,
+				MatchGVKs:   r.MatchGVKs,
 			}
 			if _, err = reader.Read(ctx); err != nil {
 				errors.Join(errm, err)

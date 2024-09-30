@@ -16,9 +16,9 @@ import (
 type FS interface {
 	Open(path string) (fs.File, error)
 
-	OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
+	//OpenFile(name string, flag int, perm fs.FileMode) (*os.File, error)
 
-	Create(path string) (*os.File, error)
+	//Create(path string) (*os.File, error)
 
 	// Readfile returns the content of a given file
 	ReadFile(path string) ([]byte, error)
@@ -43,17 +43,6 @@ type FS interface {
 	// emulating https://golang.org/pkg/path/filepath/#Glob
 	Glob(pattern string) ([]string, error)
 
-	// MkDir makes a directory.
-	Mkdir(path string) error
-
-	// MkDirAll makes a directory path, creating intervening directories.
-	MkdirAll(path string) error
-
-	// RemoveAll removes path and any children it contains.
-	RemoveAll(path string) error
-
-	// RemoveAll removes path and any children it contains.
-	Remove(path string) error
 }
 
 func NewMemFS(rootpath string, fs fstest.MapFS) FS {
@@ -69,14 +58,14 @@ func NewMemFS(rootpath string, fs fstest.MapFS) FS {
 
 func NewDiskFS(path string) FS {
 	return &fsys{
-		rootPath: path,
+		rootPath: ".",
 		fsys:     os.DirFS(path),
 	}
 }
 
-func NewFS(fs fs.FS, path string) FS {
+func NewFS(fs fs.FS) FS {
 	return &fsys{
-		rootPath: path,
+		rootPath: ".",
 		fsys:     fs,
 	}
 }
@@ -91,19 +80,20 @@ func (r *fsys) Open(path string) (fs.File, error) {
 	return r.fsys.Open(path)
 }
 
-func (r *fsys) OpenFile(path string, flag int, perm fs.FileMode) (*os.File, error) {
-	return os.OpenFile(filepath.Join(r.rootPath, path), flag, perm)
+func OpenFile(path string, flag int, perm fs.FileMode) (*os.File, error) {
+	return os.OpenFile(filepath.Join(path), flag, perm)
 }
 
-func (r *fsys) Create(path string) (*os.File, error) {
+func Create(path string) (*os.File, error) {
 	if filepath.Dir(path) != "" {
-		r.MkdirAll(filepath.Dir(path))
+		os.MkdirAll(filepath.Dir(path), 0755|os.ModeDir)
 	}
-	return os.Create(filepath.Join(r.rootPath, path))
+	return os.Create(filepath.Join(path))
 }
 
 func (r *fsys) ReadFile(path string) ([]byte, error) {
-	f, err := r.fsys.Open(path)
+	fmt.Println("testreadfile", path)
+	f, err := r.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +152,7 @@ func (r *fsys) WriteFile(path string, data []byte, perm fs.FileMode) error {
 	}
 
 	if filepath.Dir(path) != "" {
-		r.MkdirAll(filepath.Dir(path))
+		os.MkdirAll(filepath.Dir(filepath.Join(r.rootPath, path)), 0755|os.ModeDir)
 	}
 	return os.WriteFile(filepath.Join(r.rootPath, path), data, perm)
 }
@@ -184,20 +174,4 @@ func (r *fsys) Exists(path string) bool {
 
 func (r *fsys) Stat(path string) (fs.FileInfo, error) {
 	return fs.Stat(r.fsys, path)
-}
-
-func (r *fsys) Mkdir(path string) error {
-	return os.Mkdir(filepath.Join(r.rootPath, path), 0755|os.ModeDir)
-}
-
-func (r *fsys) MkdirAll(path string) error {
-	return os.MkdirAll(filepath.Join(r.rootPath, path), 0755|os.ModeDir)
-}
-
-func (r *fsys) RemoveAll(path string) error {
-	return os.RemoveAll(filepath.Join(r.rootPath, path))
-}
-
-func (r *fsys) Remove(path string) error {
-	return os.Remove(filepath.Join(r.rootPath, path))
 }

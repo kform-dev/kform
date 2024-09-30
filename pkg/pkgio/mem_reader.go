@@ -17,36 +17,43 @@ limitations under the License.
 package pkgio
 
 import (
-	"bytes"
 	"context"
-	"io"
+	"errors"
+	"strings"
+	"sync"
 
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 )
 
-type ByteReader struct {
-	Reader io.Reader
+// only read yaml
 
-	// allows the consumer to specify its own data store
-	DataStore store.Storer[[]byte]
-
-	// Path of the file the user is reading
-	Path string
+type MemReader struct {
+	Resources map[string]string
 }
 
-func (r *ByteReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
-	datastore := r.DataStore
-	if datastore == nil {
-		datastore = memory.NewStore[[]byte](nil)
-	}
+func (r *MemReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
+	datastore := memory.NewStore[[]byte](nil)
 
-	input := &bytes.Buffer{}
-	_, err := io.Copy(input, r.Reader)
-	if err != nil {
-		return datastore, err
+	var wg sync.WaitGroup
+	var errm error
+	for path, data := range r.Resources {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			reader := ByteReader{
+				Reader:    strings.NewReader(data),
+				Path:      path,
+				DataStore: datastore,
+			}
+			if _, err := reader.Read(ctx); err != nil {
+				errors.Join(errm, err)
+			}
+		}()
 	}
-	datastore.Create(store.ToKey(r.Path), input.Bytes())
-
+	wg.Wait()
+	if errm != nil {
+		return datastore, errm
+	}
 	return datastore, nil
 }

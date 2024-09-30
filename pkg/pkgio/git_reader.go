@@ -49,7 +49,7 @@ type GitReader struct {
 
 func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 	if r.DataStore == nil {
-		r.DataStore = memstore.NewStore[[]byte]()
+		r.DataStore = memstore.NewStore[[]byte](nil)
 	}
 	datastore := r.DataStore
 
@@ -101,7 +101,7 @@ func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 		return datastore, err
 	}
 	for fileName, data := range resources {
-		datastore.Create(ctx, store.ToKey(fileName), []byte(data))
+		datastore.Create(store.ToKey(fileName), []byte(data))
 	}
 
 	return datastore, nil

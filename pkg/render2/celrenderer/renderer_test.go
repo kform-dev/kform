@@ -131,8 +131,8 @@ func TestValidate(t *testing.T) {
 				t.Errorf("yaml parse error: %s", err)
 			}
 
-			varStore := memory.NewStore[data.VarData]()
-			varStore.Create(ctx, store.ToKey("input.context"), map[string][]any{
+			varStore := memory.NewStore[data.VarData](nil)
+			varStore.Create(store.ToKey("input.context"), map[string][]any{
 				data.DummyKey: {input},
 			})
 

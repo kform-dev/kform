@@ -98,7 +98,7 @@ func (r *runner) Run(ctx context.Context) error {
 	}
 
 	existingActuatedResources := invkformCtx.getResources()
-	invProviders := invkformCtx.getProviders(ctx)
+	invProviders := invkformCtx.getProviders()
 	//listPackageResources(ctx, "inv", existingActuatedResources)
 
 	var newActuatedResources store.Storer[store.Storer[data.BlockData]]
@@ -128,7 +128,7 @@ func (r *runner) Run(ctx context.Context) error {
 			return err
 		}
 		outputStore = kformCtx.getOutputStore()
-		kformProviders = kformCtx.getProviders(ctx)
+		kformProviders = kformCtx.getProviders()
 		newActuatedResources = kformCtx.getResources()
 	}
 
@@ -152,9 +152,9 @@ func (r *runner) Run(ctx context.Context) error {
 	} else {
 		//
 		// delete the remaining resources
-		listPackageResources(ctx, "inv to be deleted", differ.GetResourceToPrune())
+		listPackageResources("inv to be deleted", differ.GetResourceToPrune())
 		// get inventory resource to destroy
-		invResources := getInventoryResourcesToDelete(ctx, differ.GetResourceToPrune(), invProviders)
+		invResources := getInventoryResourcesToDelete(differ.GetResourceToPrune(), invProviders)
 		// invoke the kform context to destroy the resources
 		invkformCtx := newKformContext(&KformConfig{
 			Kind:         fns.DagRunInventory,
@@ -186,11 +186,11 @@ func (r *runner) Run(ctx context.Context) error {
 	return w.Write(ctx, outputStore)
 }
 
-func listPackageResources(ctx context.Context, prefix string, pkgResourcesStore store.Storer[store.Storer[data.BlockData]]) {
+func listPackageResources(prefix string, pkgResourcesStore store.Storer[store.Storer[data.BlockData]]) {
 	if pkgResourcesStore != nil {
-		pkgResourcesStore.List(ctx, func(ctx context.Context, k store.Key, s store.Storer[data.BlockData]) {
+		pkgResourcesStore.List(func(k store.Key, s store.Storer[data.BlockData]) {
 			pkgName := k.Name
-			s.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+			s.List(func(k store.Key, bd data.BlockData) {
 				for idx, rn := range bd.Get() {
 					fmt.Println("pkgResource", prefix, pkgName, k.String(), "idx", idx, rn.GetApiVersion(), rn.GetKind(), rn.GetName(), rn.GetNamespace(), rn.GetAnnotations())
 				}
@@ -199,11 +199,11 @@ func listPackageResources(ctx context.Context, prefix string, pkgResourcesStore 
 	}
 }
 
-func getInventoryResourcesToDelete(ctx context.Context, pkgResourcesStore store.Storer[store.Storer[data.BlockData]], providers map[string]string) store.Storer[[]byte] {
-	invResources := memory.NewStore[[]byte]()
+func getInventoryResourcesToDelete(pkgResourcesStore store.Storer[store.Storer[data.BlockData]], providers map[string]string) store.Storer[[]byte] {
+	invResources := memory.NewStore[[]byte](nil)
 	usedProviders := sets.New[string]()
-	pkgResourcesStore.List(ctx, func(ctx context.Context, k store.Key, s store.Storer[data.BlockData]) {
-		s.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+	pkgResourcesStore.List(func(k store.Key, s store.Storer[data.BlockData]) {
+		s.List(func(k store.Key, bd data.BlockData) {
 			for idx, rn := range bd.Get() {
 				parts := strings.SplitN(k.Name, ".", 2)
 				resourceType := parts[0]
@@ -217,14 +217,14 @@ func getInventoryResourcesToDelete(ctx context.Context, pkgResourcesStore store.
 
 				usedProviders.Insert(strings.SplitN(resourceType, "_", 2)[0])
 
-				invResources.Create(ctx, store.ToKey(fmt.Sprintf("%s_%d.yaml", k.String(), idx)), []byte(rn.MustString()))
+				invResources.Create(store.ToKey(fmt.Sprintf("%s_%d.yaml", k.String(), idx)), []byte(rn.MustString()))
 			}
 		})
 	})
 
 	for provider, config := range providers {
 		if usedProviders.Has(provider) {
-			invResources.Create(ctx, store.ToKey(fmt.Sprintf("%s.yaml", provider)), []byte(config))
+			invResources.Create(store.ToKey(fmt.Sprintf("%s.yaml", provider)), []byte(config))
 		}
 	}
 	return invResources

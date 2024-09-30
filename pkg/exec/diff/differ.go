@@ -50,8 +50,8 @@ func (r *Differ) Run(ctx context.Context) error {
 	// we walk over the to store
 	var errm error
 	if r.To.Store != nil {
-		r.To.Store.List(ctx, func(ctx context.Context, pkgKey store.Key, pkgStore store.Storer[data.BlockData]) {
-			pkgStore.List(ctx, func(ctx context.Context, blockKey store.Key, bd data.BlockData) {
+		r.To.Store.List(func(pkgKey store.Key, pkgStore store.Storer[data.BlockData]) {
+			pkgStore.List(func(blockKey store.Key, bd data.BlockData) {
 				for _, toRn := range bd.Get() {
 					fileName, err := fsys.GetFileName(toRn)
 					if err != nil {
@@ -103,8 +103,8 @@ func (r *Differ) Run(ctx context.Context) error {
 	}
 	if r.From.Store != nil {
 		// update the remainder of the from
-		r.From.Store.List(ctx, func(ctx context.Context, pkgKey store.Key, pkgStore store.Storer[data.BlockData]) {
-			pkgStore.List(ctx, func(ctx context.Context, blockKey store.Key, bd data.BlockData) {
+		r.From.Store.List(func(pkgKey store.Key, pkgStore store.Storer[data.BlockData]) {
+			pkgStore.List(func(blockKey store.Key, bd data.BlockData) {
 				for _, fromRn := range bd.Get() {
 					fileName, err := fsys.GetFileName(fromRn)
 					if err != nil {

@@ -102,7 +102,7 @@ func TestKformDirReader(t *testing.T) {
 			}
 
 			output := map[types.NamespacedName][][]string{}
-			datastore.List(ctx, func(ctx context.Context, key store.Key, rn *yaml.RNode) {
+			datastore.List(func(key store.Key, rn *yaml.RNode) {
 				output[key.NamespacedName] = [][]string{}
 				for k, v := range rn.GetAnnotations() {
 					k := k

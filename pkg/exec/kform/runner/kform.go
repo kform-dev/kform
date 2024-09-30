@@ -31,9 +31,9 @@ type KformConfig struct {
 func newKformContext(cfg *KformConfig) *kformContext {
 	return &kformContext{
 		cfg:             cfg,
-		outputStore:     memory.NewStore[data.BlockData](),
-		resourcesStore:  memory.NewStore[store.Storer[data.BlockData]](),
-		providerConfigs: memory.NewStore[string](),
+		outputStore:     memory.NewStore[data.BlockData](nil),
+		resourcesStore:  memory.NewStore[store.Storer[data.BlockData]](nil),
+		providerConfigs: memory.NewStore[string](nil),
 	}
 }
 
@@ -97,7 +97,7 @@ func (r *kformContext) ParseAndRun(ctx context.Context, inputVars map[string]any
 	}
 
 	defer func() {
-		r.providerInstances.List(ctx, func(ctx context.Context, key store.Key, provider plugin.Provider) {
+		r.providerInstances.List(func(key store.Key, provider plugin.Provider) {
 			if provider != nil {
 				provider.Close(ctx)
 				log.Debug("closing provider", "nsn", key.Name)
@@ -128,9 +128,9 @@ func (r *kformContext) getResources() store.Storer[store.Storer[data.BlockData]]
 	return r.resourcesStore
 }
 
-func (r *kformContext) getProviders(ctx context.Context) map[string]string {
+func (r *kformContext) getProviders() map[string]string {
 	providers := map[string]string{}
-	r.providerConfigs.List(ctx, func(ctx context.Context, k store.Key, s string) {
+	r.providerConfigs.List(func(k store.Key, s string) {
 		providers[k.Name] = s
 	})
 	return providers
@@ -140,7 +140,7 @@ func (r *kformContext) runProviderDAG(ctx context.Context, rootPackage *types.Pa
 	log := log.FromContext(ctx)
 	// initialize the recorder
 	runRecorder := recorder.New[diag.Diagnostic]()
-	outputStore := memory.NewStore[data.BlockData]()
+	outputStore := memory.NewStore[data.BlockData](nil)
 
 	// run the provider DAG
 	log.Debug("create provider runner")

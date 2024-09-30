@@ -36,7 +36,7 @@ func (r *KformParser) GetProviderConfigs(ctx context.Context) (store.Storer[type
 	if err != nil {
 		return nil, nil, err
 	}
-	providerConfigs := memory.NewStore[types.Block]()
+	providerConfigs := memory.NewStore[types.Block](nil)
 	providerConfigSets := sets.New[string]()
 	rootProviderConfigs := rootPackage.ListProviderConfigs(ctx)
 	// walk through all packages and for all mixins list the providers
@@ -49,7 +49,7 @@ func (r *KformParser) GetProviderConfigs(ctx context.Context) (store.Storer[type
 				if !ok {
 					return nil, nil, err
 				}
-				providerConfigs.Create(ctx, store.ToKey(providerName), providerConfig)
+				providerConfigs.Create(store.ToKey(providerName), providerConfig)
 				providerConfigSets = providerConfigSets.Insert(providerName)
 			}
 		}
@@ -85,7 +85,7 @@ func (r *KformParser) listRawProviders(ctx context.Context) (sets.Set[string], e
 // initialize the raw providers for which multiple instances could be instantiated
 // e.g. for aliasing
 func (r *KformParser) InitProviders(ctx context.Context) (store.Storer[types.Provider], error) {
-	providers := memory.NewStore[types.Provider]()
+	providers := memory.NewStore[types.Provider](nil)
 
 	rawProviders, err := r.listRawProviders(ctx)
 	if err != nil {
@@ -96,21 +96,21 @@ func (r *KformParser) InitProviders(ctx context.Context) (store.Storer[types.Pro
 		if err != nil {
 			return nil, err
 		}
-		providers.Create(ctx, store.ToKey(providerName), provider)
+		providers.Create(store.ToKey(providerName), provider)
 	}
 
 	return providers, nil
 }
 
 func (r *KformParser) GetEmptyProviderInstances(ctx context.Context) (store.Storer[plugin.Provider], error) {
-	providerInstances := memory.NewStore[plugin.Provider]()
+	providerInstances := memory.NewStore[plugin.Provider](nil)
 
 	_, providerConfigNames, err := r.GetProviderConfigs(ctx)
 	if err != nil {
 		return nil, err
 	}
 	for _, providerConfigName := range providerConfigNames.UnsortedList() {
-		providerInstances.Create(ctx, store.ToKey(providerConfigName), nil)
+		providerInstances.Create(store.ToKey(providerConfigName), nil)
 	}
 	return providerInstances, nil
 }

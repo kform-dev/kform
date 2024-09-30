@@ -12,7 +12,6 @@ import (
 )
 
 func (r Object) GetRnNode(blockType, resourceType, resourceID string) *yaml.RNode {
-
 	rn := yaml.NewMapRNode(nil)
 	rn.SetApiVersion(schema.GroupVersion{Group: r.ObjectRef.Group, Version: r.ObjectRef.Version}.String())
 	rn.SetKind(r.ObjectRef.Kind)
@@ -33,12 +32,12 @@ func MarshalProviders(providers map[string]string) ([]byte, error) {
 func MarshalPackages(ctx context.Context, pkgs store.Storer[store.Storer[data.BlockData]]) ([]byte, error) {
 	packages := map[string]*PackageInventory{}
 	var errm error
-	pkgs.List(ctx, func(ctx context.Context, k store.Key, pkgStore store.Storer[data.BlockData]) {
+	pkgs.List(func(k store.Key, pkgStore store.Storer[data.BlockData]) {
 		pkgName := k.Name
 		packages[pkgName] = &PackageInventory{
 			PackageResources: map[string][]Object{},
 		}
-		pkgStore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+		pkgStore.List(func(k store.Key, bd data.BlockData) {
 			objs, err := getObject(bd)
 			if err != nil {
 				errors.Join(errm, err)

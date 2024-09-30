@@ -18,7 +18,6 @@ package pkgio
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"regexp"
 	"strconv"
@@ -37,8 +36,8 @@ type filereader struct {
 	Fsys     fsys.FS
 }
 
-func (r *filereader) readFileContent(ctx context.Context, paths []string) (store.Storer[[]byte], error) {
-	data := memory.NewStore[[]byte]()
+func (r *filereader) readFileContent(paths []string) (store.Storer[[]byte], error) {
+	data := memory.NewStore[[]byte](nil)
 	var wg sync.WaitGroup
 	for _, path := range paths {
 		path := path
@@ -53,7 +52,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 					return
 				}
 				d = []byte(hash)
-				data.Create(ctx, store.ToKey(path), d)
+				data.Create(store.ToKey(path), d)
 				return
 			}
 
@@ -80,7 +79,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 					if i != len(values)-1 {
 						values[i] += "\n"
 					}
-					data.Create(ctx, store.KeyFromNSN(
+					data.Create(store.KeyFromNSN(
 						types.NamespacedName{
 							Namespace: strconv.Itoa(i),
 							Name:      path,
@@ -91,7 +90,7 @@ func (r *filereader) readFileContent(ctx context.Context, paths []string) (store
 				if err != nil {
 					return
 				}
-				data.Create(ctx, store.ToKey(path), d)
+				data.Create(store.ToKey(path), d)
 			}
 
 		}()

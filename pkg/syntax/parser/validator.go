@@ -76,20 +76,20 @@ func (r *KformParser) validateMixins(ctx context.Context) {
 		// only process packages  that mixin other packages
 		mixins := types.ListBlocks(ctx, pkg.Blocks, types.ListBlockOptions{Prefix: kformv1alpha1.BlockTYPE_PACKAGE.String()})
 		for mixinPackageName, mixin := range mixins {
-			mixinPkg, err := r.packages.Get(ctx, store.ToKey(mixinPackageName))
+			mixinPkg, err := r.packages.Get(store.ToKey(mixinPackageName))
 			if err != nil {
 				r.recorder.Record(diag.DiagErrorf("package mixin from %s to %s not found in package", packageName, mixinPackageName))
 			}
 			// validate if the module call matches the input of the remote module
 			for inputName := range mixin.GetInputParameters() {
 				inputName := fmt.Sprintf("input.%s", inputName)
-				if _, err := mixinPkg.Blocks.Get(ctx, store.ToKey(inputName)); err != nil {
+				if _, err := mixinPkg.Blocks.Get(store.ToKey(inputName)); err != nil {
 					r.recorder.Record(diag.DiagErrorf("package mixin from %s to %s not found in inputs %s", packageName, mixinPackageName, inputName))
 				}
 			}
 			// validate the sourceproviders in the module call
 			for targetProvider, sourceProvider := range mixin.GetProviders() {
-				if _, err := pkg.ProviderConfigs.Get(ctx, store.ToKey(sourceProvider)); err != nil {
+				if _, err := pkg.ProviderConfigs.Get(store.ToKey(sourceProvider)); err != nil {
 					r.recorder.Record(diag.DiagErrorf("provider package mixin from %s to %s source provider %s not found", packageName, mixinPackageName, sourceProvider))
 				}
 				if !mixinPkg.ListProvidersFromResources(ctx).Has(targetProvider) {
@@ -106,13 +106,13 @@ func (r *KformParser) validateMixins(ctx context.Context) {
 			if _, ok := mixins[mixinPackageName]; !ok {
 				r.recorder.Record(diag.DiagErrorf("package mixin from %s to %s not found in mixin fromctx: %s", packageName, mixinPackageName, mixinCtx))
 			}
-			mixinPkg, err := r.packages.Get(ctx, store.ToKey(mixinPackageName))
+			mixinPkg, err := r.packages.Get(store.ToKey(mixinPackageName))
 			if err != nil {
 				r.recorder.Record(diag.DiagErrorf("package mixin from %s to %s not found in packages fromctx: %s", packageName, mixinPackageName, mixinCtx))
 			}
 
 			outputName := fmt.Sprintf("output.%s", split[2])
-			if _, err := mixinPkg.Blocks.Get(ctx, store.ToKey(outputName)); err != nil {
+			if _, err := mixinPkg.Blocks.Get(store.ToKey(outputName)); err != nil {
 				r.recorder.Record(diag.DiagErrorf("package mixin from %s to %s not found in outputs %s fromctx: %s", packageName, mixinPackageName, outputName, mixinCtx))
 			}
 		}

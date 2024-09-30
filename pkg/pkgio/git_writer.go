@@ -48,7 +48,7 @@ type GitWriter struct {
 func (r *GitWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) error {
 
 	resources := map[string]string{}
-	datastore.List(ctx, func(ctx context.Context, k store.Key, b []byte) {
+	datastore.List(func(k store.Key, b []byte) {
 		parts := strings.Split(k.Name, ".")
 		filename := strings.Join(parts[:len(parts)-1], ".")
 		resources[filename] = string(b)

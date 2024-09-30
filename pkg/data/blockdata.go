@@ -108,7 +108,7 @@ func UpdateBlockStoreEntry(ctx context.Context, storeInstance store.Storer[Block
 		return fmt.Errorf("index cannot be bigger or equal to total index: %d, totol: %d", indexInt, totalInt)
 	}
 	var errm error
-	storeInstance.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockData BlockData) BlockData {
+	storeInstance.UpdateWithKeyFn(store.ToKey(blockName), func(blockData BlockData) BlockData {
 		if blockData == nil {
 			blockData = BlockData{}
 		}
@@ -124,7 +124,7 @@ func UpdateBlockStoreEntry(ctx context.Context, storeInstance store.Storer[Block
 // Delete the block
 func DeleteBlockStoreEntry(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, rn *yaml.RNode) error {
 	var errm error
-	storeInstance.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, blockData BlockData) BlockData {
+	storeInstance.UpdateWithKeyFn(store.ToKey(blockName), func(blockData BlockData) BlockData {
 		if blockData == nil {
 			return blockData
 		}
@@ -138,7 +138,7 @@ func DeleteBlockStoreEntry(ctx context.Context, storeInstance store.Storer[Block
 }
 
 func GetBlockStoreEntry(ctx context.Context, storeInstance store.Storer[BlockData], blockName string, rn *yaml.RNode) *yaml.RNode {
-	blockData, err := storeInstance.Get(ctx, store.ToKey(blockName))
+	blockData, err := storeInstance.Get(store.ToKey(blockName))
 	if err != nil {
 		return nil
 	}

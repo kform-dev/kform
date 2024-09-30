@@ -57,7 +57,7 @@ func isCelExpressionWithoutVariables(s string) (bool, error) {
 
 func (r *renderer) isCelExression(ctx context.Context, expr string) bool {
 	log := log.FromContext(ctx)
-	for _, ref := range r.varStore.ListKeys(ctx) {
+	for _, ref := range r.varStore.ListKeys() {
 		if strings.Contains(expr, ref) {
 			return true
 		}
@@ -80,7 +80,7 @@ func (r *renderer) isCelExression(ctx context.Context, expr string) bool {
 func (r *renderer) getNewVars(ctx context.Context, expr string) (map[string]any, error) {
 	log := log.FromContext(ctx)
 	newVars := map[string]any{}
-	r.varStore.List(ctx, func(ctx context.Context, key store.Key, vardata data.VarData) {
+	r.varStore.List(func(key store.Key, vardata data.VarData) {
 		if strings.Contains(expr, key.Name) {
 			var v any
 			var ok bool
