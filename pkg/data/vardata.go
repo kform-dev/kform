@@ -79,7 +79,7 @@ func UpdateVarStore(ctx context.Context, varStore store.Storer[VarData], blockNa
 	}
 	var errm error
 	log.Debug("update varStore entry", "key", store.ToKey(blockName), "totalInt", totalInt, "indexInt", indexInt, "data", data)
-	varStore.UpdateWithKeyFn(ctx, store.ToKey(blockName), func(ctx context.Context, varData VarData) VarData {
+	varStore.UpdateWithKeyFn(store.ToKey(blockName), func(varData VarData) VarData {
 		log.Debug("update varStore", "key", store.ToKey(blockName), "varData", varData, "totalInt", totalInt, "indexInt", indexInt, "data", data)
 		if varData == nil {
 			varData = VarData{}

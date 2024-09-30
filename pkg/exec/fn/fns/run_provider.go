@@ -58,13 +58,13 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 		return err
 	}
 	// store the config
-	if err := r.providerConfigs.Create(ctx, store.ToKey(vctx.BlockName), rn.MustString()); err != nil {
+	if err := r.providerConfigs.Create(store.ToKey(vctx.BlockName), rn.MustString()); err != nil {
 		log.Error("cannot store provider config", "error", err.Error())
 		return err
 	}
 	log.Debug("providerConfig", "config", string(b))
 	// get the provider for initialization
-	p, err := r.providers.Get(ctx, store.ToKey(vctx.BlockName))
+	p, err := r.providers.Get(store.ToKey(vctx.BlockName))
 	if err != nil {
 		log.Error("provider not found in inventory", "err", err)
 		return fmt.Errorf("provider %s not found in inventory err: %s", vctx.BlockName, err.Error())
@@ -90,7 +90,7 @@ func (r *provider) Run(ctx context.Context, vctx *types.VertexContext, localVars
 	}
 
 	// add the provider client to the cache - delete will happen after the run
-	if err := r.providerInstances.Update(ctx, store.ToKey(vctx.BlockName), provider); err != nil {
+	if err := r.providerInstances.Update(store.ToKey(vctx.BlockName), provider); err != nil {
 		log.Error("cannot update provider", "err", err)
 		return err
 	}

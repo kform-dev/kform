@@ -43,7 +43,7 @@ func (r *DiffContext) DeleteDir() error {
 
 func (r *DiffContext) GetStoreItem(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) runtime.Object {
 	log := log.FromContext(ctx)
-	pkgStore, err := r.Store.Get(ctx, store.ToKey(pkgName))
+	pkgStore, err := r.Store.Get(store.ToKey(pkgName))
 	if err != nil {
 		// not a worry as this means the package did not exist
 		return nil
@@ -62,7 +62,7 @@ func (r *DiffContext) GetStoreItem(ctx context.Context, pkgName, blockName strin
 
 func (r *DiffContext) DeleteStoreItem(ctx context.Context, pkgName, blockName string, rn *yaml.RNode) error {
 	// get the pkgStore in which we store the resources actuated per package
-	pkgStore, err := r.Store.Get(ctx, store.ToKey(pkgName))
+	pkgStore, err := r.Store.Get(store.ToKey(pkgName))
 	if err != nil {
 		// not a worry as this means the package did not exist
 		return nil

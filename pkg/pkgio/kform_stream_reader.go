@@ -39,7 +39,7 @@ func (r *KformStreamReader) Read(ctx context.Context) (store.Storer[*yaml.RNode]
 		annotations[kformv1alpha1.KformAnnotationKey_BLOCK_TYPE] = kformv1alpha1.BlockTYPE_INPUT.String()
 	}
 
-	datastore := memory.NewStore[*yaml.RNode]()
+	datastore := memory.NewStore[*yaml.RNode](nil)
 	reader := YAMLReader{
 		Reader:      r.Reader,
 		Path:        "stream",

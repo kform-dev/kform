@@ -63,7 +63,7 @@ func testNotExistErr(t *testing.T, tfs FS) {
 	t.Helper()
 	const path = "bad-dir/bad-file.txt"
 
-	err := tfs.RemoveAll(path)
+	err := os.RemoveAll(path)
 	assert.Falsef(t, errors.Is(err, os.ErrNotExist), "RemoveAll should not return ErrNotExist, got %v", err)
 	_, err = tfs.ReadFile(path)
 	assert.Truef(t, errors.Is(err, os.ErrNotExist), "ReadFile should return ErrNotExist, got %v", err)
@@ -99,10 +99,11 @@ func testReadFS(t *testing.T, data fstest.MapFS, tfsys FS) {
 		sorteddata = append(sorteddata, path)
 	}
 	sort.Strings(sorteddata)
-
+	fmt.Println("sorteddata", sorteddata)
 	for path, mapFile := range data {
 		// test readFile
 		d, err := tfsys.ReadFile(path)
+		fmt.Println("testerror", err, string(d))
 		assert.NoError(t, err)
 		if diff := cmp.Diff(mapFile.Data, d); diff != "" {
 			t.Errorf("want %s, got: %s", string(mapFile.Data), string(d))

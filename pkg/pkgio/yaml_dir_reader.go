@@ -19,41 +19,52 @@ package pkgio
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"sync"
 
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
 	"github.com/kform-dev/kform/pkg/fsys"
 	"github.com/kform-dev/kform/pkg/pkgio/ignore"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 // only read yaml
 type YAMLDirReader struct {
-	Path string
+	FsysPath    string
+	RelFsysPath string
+	Fsys        fs.FS
+	SkipDir     bool
+	MatchGVKs   []schema.GroupVersionKind
 }
 
 func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
-	fsys := fsys.NewDiskFS(r.Path)
+	var fs fsys.FS
+	if r.Fsys != nil {
+		fs = fsys.NewFS(r.Fsys)
+	} else {
+		fs = fsys.NewDiskFS(r.FsysPath)
+	}
 
 	ignoreRules := ignore.Empty(IgnoreFileMatch[0])
-	f, err := fsys.Open(IgnoreFileMatch[0])
+	f, err := fs.Open(IgnoreFileMatch[0])
 	if err == nil {
 		// if an error is return the rules is empty, so we dont have to worry about the error
 		ignoreRules, _ = ignore.Parse(f)
 	}
 	dirReader := &DirReader{
-		Path:           r.Path,
-		Fsys:           fsys,
+		RelFsysPath:    r.RelFsysPath,
+		Fsys:           fs,
 		MatchFilesGlob: YAMLMatch,
 		IgnoreRules:    ignoreRules,
-		SkipDir:        true, // a package is contained within a single directory, recursion is not needed
+		SkipDir:        r.SkipDir,
 	}
 	paths, err := dirReader.getPaths(ctx)
 	if err != nil {
 		return nil, err
 	}
-	datastore := memory.NewStore[*yaml.RNode]()
+	datastore := memory.NewStore[*yaml.RNode](nil)
 	var errm error
 	var wg sync.WaitGroup
 	for _, path := range paths {
@@ -63,7 +74,7 @@ func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], er
 		go func() {
 			defer wg.Done()
 			annotations := map[string]string{}
-			f, err := fsys.Open(path)
+			f, err := fs.Open(path)
 			if err != nil {
 				errors.Join(errm, err)
 				return
@@ -75,6 +86,7 @@ func (r *YAMLDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], er
 				Path:        path,
 				Annotations: annotations,
 				DataStore:   datastore,
+				MatchGVKs:   r.MatchGVKs,
 			}
 			if _, err = reader.Read(ctx); err != nil {
 				errors.Join(errm, err)

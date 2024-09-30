@@ -137,7 +137,7 @@ func TgzReader(ctx context.Context, r io.Reader, data store.Storer[[]byte]) erro
 			}
 			//fmt.Println("File Content:")
 			//fmt.Println(fileContent.String())
-			data.Create(ctx, store.ToKey(header.Name), fileContent.Bytes())
+			data.Create(store.ToKey(header.Name), fileContent.Bytes())
 
 		default:
 			fmt.Println("unknown:", header.Name, header.Typeflag)
@@ -268,7 +268,7 @@ func UnzipTgz(ctx context.Context, basepath string, tgzData []byte, data store.S
 			if _, err := io.Copy(fileContent, tarReader); err != nil {
 				log.Fatalf("ExtractTarGz: Copy() failed: %s", err.Error())
 			}
-			data.Create(ctx, store.ToKey(filepath.Join(basepath, header.Name)), fileContent.Bytes())
+			data.Create(store.ToKey(filepath.Join(basepath, header.Name)), fileContent.Bytes())
 		default:
 			return fmt.Errorf("unknown type: %s, %b", header.Name, header.Typeflag)
 		}

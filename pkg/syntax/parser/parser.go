@@ -50,7 +50,7 @@ func NewKformParser(ctx context.Context, cfg *Config) (*KformParser, error) {
 		cfg:             cfg,
 		rootPackageName: fmt.Sprintf("%s.%s", kformv1alpha1.BlockTYPE_PACKAGE.String(), cfg.PackageName),
 		recorder:        recorder,
-		packages:        memory.NewStore[*types.Package](),
+		packages:        memory.NewStore[*types.Package](nil),
 		//providers:      memory.NewStore[*address.Package](),
 	}, nil
 }
@@ -135,7 +135,7 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 		// if an error is found we stop processing
 		return
 	}
-	if err := r.packages.Create(ctx, store.ToKey(r.cfg.PackageName), pkg); err != nil {
+	if err := r.packages.Create(store.ToKey(r.cfg.PackageName), pkg); err != nil {
 		r.recorder.Record(diag.DiagErrorf("cannot create package %s", r.cfg.PackageName))
 		return
 	}
@@ -171,12 +171,12 @@ func (r *KformParser) parsePackage(ctx context.Context, packageName string, pkgT
 }
 
 func (r *KformParser) GetRootPackage(ctx context.Context) (*types.Package, error) {
-	return r.packages.Get(ctx, store.ToKey(r.cfg.PackageName))
+	return r.packages.Get(store.ToKey(r.cfg.PackageName))
 }
 
 func (r *KformParser) ListPackages(ctx context.Context) map[string]*types.Package {
 	packages := map[string]*types.Package{}
-	r.packages.List(ctx, func(ctx context.Context, key store.Key, pkg *types.Package) {
+	r.packages.List(func(key store.Key, pkg *types.Package) {
 		packages[key.Name] = pkg
 	})
 	return packages

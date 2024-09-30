@@ -24,52 +24,20 @@ import (
 
 	"github.com/henderiw/store"
 	"github.com/henderiw/store/memory"
-	kformv1alpha1 "github.com/kform-dev/kform/apis/pkg/v1alpha1"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
 // only read yaml
 
-type KformMemReader struct {
+type YAMLMemReader struct {
 	Resources map[string]string
-	Data      store.Storer[[]byte]
-	Input     bool
 }
 
-func (r *KformMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
-	annotations := map[string]string{}
-	if r.Input {
-		annotations[kformv1alpha1.KformAnnotationKey_BLOCK_TYPE] = kformv1alpha1.BlockTYPE_INPUT.String()
-	}
+func (r *YAMLMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], error) {
+	datastore := memory.NewStore[*yaml.RNode](nil)
+
 	var wg sync.WaitGroup
 	var errm error
-	datastore := memory.NewStore[*yaml.RNode](nil)
-	if r.Data != nil {
-		r.Data.List(func(k store.Key, b []byte) {
-			// only look at yaml files
-			if match, err := MatchFilesGlob(YAMLMatch).ShouldSkipFile(k.Name); err != nil {
-				errors.Join(errm, err)
-				return
-			} else if match {
-				return
-			}
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				reader := YAMLReader{
-					Reader:      strings.NewReader(string(b)),
-					Path:        k.Name,
-					Annotations: annotations,
-					DataStore:   datastore,
-				}
-				if _, err := reader.Read(ctx); err != nil {
-					errors.Join(errm, err)
-				}
-			}()
-		})
-	}
-
 	for path, data := range r.Resources {
 		data := data
 		path := path
@@ -84,10 +52,9 @@ func (r *KformMemReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 		go func() {
 			defer wg.Done()
 			reader := YAMLReader{
-				Reader:      strings.NewReader(data),
-				Path:        path,
-				Annotations: annotations,
-				DataStore:   datastore,
+				Reader:    strings.NewReader(data),
+				Path:      path,
+				DataStore: datastore,
 			}
 			if _, err := reader.Read(ctx); err != nil {
 				errors.Join(errm, err)

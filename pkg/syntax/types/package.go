@@ -40,10 +40,10 @@ func NewPackage(name string, kind PackageKind, recorder recorder.Recorder[diag.D
 		Kind:     kind,
 		recorder: recorder,
 
-		ProviderRequirements: memory.NewStore[kformv1alpha1.Provider](),
-		ProviderConfigs:      memory.NewStore[Block](),
+		ProviderRequirements: memory.NewStore[kformv1alpha1.Provider](nil),
+		ProviderConfigs:      memory.NewStore[Block](nil),
 
-		Blocks: memory.NewStore[Block](),
+		Blocks: memory.NewStore[Block](nil),
 	}
 }
 
@@ -118,7 +118,7 @@ func (r *Package) AddDependencies(ctx context.Context) {
 		}
 		block.UpdateDependencies(deprenderer.GetDependencies(ctx))
 		block.UpdatePkgDependencies(deprenderer.GetPkgDependencies(ctx))
-		r.Blocks.Update(ctx, store.ToKey(blockName), block)
+		r.Blocks.Update(store.ToKey(blockName), block)
 	}
 }
 
@@ -136,7 +136,7 @@ func (r *Package) ResolveDAGDependencies(ctx context.Context) {
 	}
 }
 
-func (r *Package) resolveDependencies(ctx context.Context, name string, b Block) {
+func (r *Package) resolveDependencies(_ context.Context, name string, b Block) {
 	for d, dctx := range b.GetDependencies() {
 		switch strings.Split(d, ".")[0] {
 		case kformv1alpha1.LoopKeyEach:
@@ -148,7 +148,7 @@ func (r *Package) resolveDependencies(ctx context.Context, name string, b Block)
 				r.recorder.Record(diag.DiagErrorfWithContext(b.GetContext(name), "%s package: %s dependency resolution failed each requires a count attribute dependency: %s, ctx: %s", r.Kind.String(), r.Name, d, dctx))
 			}
 		default:
-			if _, err := r.Blocks.Get(ctx, store.ToKey(d)); err != nil {
+			if _, err := r.Blocks.Get(store.ToKey(d)); err != nil {
 				r.recorder.Record(diag.DiagErrorfWithContext(b.GetContext(name), "%s package: %s dependency resolution failed for %s, ctx: %s, err: %s", r.Kind.String(), r.Name, d, dctx, err.Error()))
 			}
 		}
@@ -165,7 +165,7 @@ func (r *Package) ResolveResource2ProviderConfig(ctx context.Context) {
 		kformv1alpha1.BlockType_BACKEND.String(),
 	}}) {
 		provider := b.GetProvider()
-		if _, err := r.ProviderConfigs.Get(ctx, store.ToKey(provider)); err != nil {
+		if _, err := r.ProviderConfigs.Get(store.ToKey(provider)); err != nil {
 			r.recorder.Record(diag.DiagErrorfWithContext(b.GetContext(name), "%s package: %s provider resolution resource2providerConfig failed for %s, err: %s", r.Kind.String(), r.Name, provider, err.Error()))
 		}
 	}
@@ -174,7 +174,7 @@ func (r *Package) ResolveResource2ProviderConfig(ctx context.Context) {
 func (r *Package) ValidateMixinProviderConfigs(ctx context.Context) {
 	if r.Kind == PackageKind_MIXIN {
 		providerConfigs := []string{}
-		r.ProviderConfigs.List(ctx, func(ctx context.Context, key store.Key, b Block) {
+		r.ProviderConfigs.List(func(key store.Key, b Block) {
 			providerConfigs = append(providerConfigs, key.Name)
 		})
 		if len(providerConfigs) > 0 {
@@ -191,7 +191,7 @@ type ListBlockOptions struct {
 
 func ListBlocks(ctx context.Context, s store.Storer[Block], opts ...ListBlockOptions) map[string]Block {
 	blocks := map[string]Block{}
-	s.List(ctx, func(ctx context.Context, key store.Key, data Block) {
+	s.List(func(key store.Key, data Block) {
 		if opts != nil {
 			excluded := false
 			if opts[0].Prefix != "" {
@@ -230,7 +230,7 @@ func ListBlocks(ctx context.Context, s store.Storer[Block], opts ...ListBlockOpt
 
 func (r *Package) ListProviderConfigs(ctx context.Context) map[string]Block {
 	providerConfigs := map[string]Block{}
-	r.ProviderConfigs.List(ctx, func(ctx context.Context, key store.Key, b Block) {
+	r.ProviderConfigs.List(func(key store.Key, b Block) {
 		providerConfigs[key.Name] = b
 	})
 	return providerConfigs
@@ -276,7 +276,7 @@ func (r *Package) ListRawProvidersFromResources(ctx context.Context) sets.Set[st
 
 func (r *Package) ListProviderRequirements(ctx context.Context) map[string]kformv1alpha1.Provider {
 	providerRequirements := map[string]kformv1alpha1.Provider{}
-	r.ProviderRequirements.List(ctx, func(ctx context.Context, key store.Key, provider kformv1alpha1.Provider) {
+	r.ProviderRequirements.List(func(key store.Key, provider kformv1alpha1.Provider) {
 		providerRequirements[key.Name] = provider
 	})
 	return providerRequirements

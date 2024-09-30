@@ -76,7 +76,7 @@ func (r *backend) UpdatePackage(ctx context.Context) {
 		return
 	}
 	// checks for duplicate resources
-	if err := pkg.Blocks.Create(ctx, store.ToKey(blockName), block); err != nil {
+	if err := pkg.Blocks.Create(store.ToKey(blockName), block); err != nil {
 		r.recorder.Record(diag.DiagFromErrWithContext(
 			Context{ctx}.String(),
 			fmt.Errorf("duplicate resource with fileName: %s, name: %s, type: %s",

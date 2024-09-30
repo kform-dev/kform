@@ -31,7 +31,7 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 	prioritizedKeys := []store.Key{}
 	keys := []store.Key{}
 	files := map[string][]store.Key{}
-	datastore.List(ctx, func(ctx context.Context, k store.Key, bd data.BlockData) {
+	datastore.List(func(k store.Key, bd data.BlockData) {
 		if len(bd) > 0 { // only the first entry is relevant -> all
 			rn := bd[0]
 			rnAnnotations := rn.GetAnnotations()
@@ -51,7 +51,6 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 				if len(files[path]) == 0 {
 					files[path] = []store.Key{}
 				}
-
 				files[path] = append(files[path], store.KeyFromNSN(types.NamespacedName{
 					Namespace: fileIdx,
 					Name:      k.Name,
@@ -72,31 +71,31 @@ func (r *KformWriter) Write(ctx context.Context, datastore store.Storer[data.Blo
 
 	switch r.Type {
 	case OutputSink_Dir:
-		return r.writeDir(ctx, keys, datastore)
+		return r.writeDir(keys, datastore)
 	case OutputSink_File:
 		file, err := os.Create(r.Path)
 		if err != nil {
 			return err
 		}
 		defer file.Close()
-		return r.writeSingle(ctx, file, prioritizedKeys, keys, datastore)
+		return r.writeSingle(file, prioritizedKeys, keys, datastore)
 	case OutputSink_StdOut: // nothing to do
-		return r.writeSingle(ctx, os.Stdout, prioritizedKeys, keys, datastore)
+		return r.writeSingle(os.Stdout, prioritizedKeys, keys, datastore)
 	case OutputSink_FileRetain:
-		return r.writeRetainFile(ctx, files, datastore)
+		return r.writeRetainFile(files, datastore)
 	case OutputSink_Memory:
-		return r.writeMem(ctx, keys, datastore)
+		return r.writeMem(keys, datastore)
 	}
 	return nil
 }
 
-func (r *KformWriter) writeMem(ctx context.Context, keys []store.Key, datastore store.Storer[data.BlockData]) error {
+func (r *KformWriter) writeMem(keys []store.Key, datastore store.Storer[data.BlockData]) error {
 	if r.OuputData == nil {
 		return fmt.Errorf("kformWriter to memory requires a output data store, got nil")
 	}
 	var errm error
 	for _, key := range keys {
-		bd, err := datastore.Get(ctx, store.ToKey(key.Name))
+		bd, err := datastore.Get(store.ToKey(key.Name))
 		if err != nil {
 			errors.Join(errm, err)
 			continue
@@ -117,16 +116,16 @@ func (r *KformWriter) writeMem(ctx context.Context, keys []store.Key, datastore 
 				rn.GetName(),
 			))
 
-			r.OuputData.Create(ctx, store.ToKey(fileName), []byte(rn.MustString()))
+			r.OuputData.Create(store.ToKey(fileName), []byte(rn.MustString()))
 		}
 	}
 	return errm
 }
 
-func (r *KformWriter) writeDir(ctx context.Context, keys []store.Key, datastore store.Storer[data.BlockData]) error {
+func (r *KformWriter) writeDir(keys []store.Key, datastore store.Storer[data.BlockData]) error {
 	var errm error
 	for _, key := range keys {
-		bd, err := datastore.Get(ctx, store.ToKey(key.Name))
+		bd, err := datastore.Get(store.ToKey(key.Name))
 		if err != nil {
 			errors.Join(errm, err)
 			continue
@@ -149,6 +148,7 @@ func (r *KformWriter) writeDir(ctx context.Context, keys []store.Key, datastore 
 			if err != nil {
 				return err
 			}
+			defer file.Close()
 			fmt.Fprintf(file, "---\n%s\n", rn.MustString())
 			file.Close()
 		}
@@ -156,10 +156,10 @@ func (r *KformWriter) writeDir(ctx context.Context, keys []store.Key, datastore 
 	return errm
 }
 
-func (r *KformWriter) writeSingle(ctx context.Context, w io.Writer, prioritizedKeys, keys []store.Key, datastore store.Storer[data.BlockData]) error {
+func (r *KformWriter) writeSingle(w io.Writer, prioritizedKeys, keys []store.Key, datastore store.Storer[data.BlockData]) error {
 	var errm error
 	for _, priorityKey := range prioritizedKeys {
-		bd, err := datastore.Get(ctx, store.ToKey(priorityKey.Name))
+		bd, err := datastore.Get(store.ToKey(priorityKey.Name))
 		if err != nil {
 			errors.Join(errm, err)
 			continue
@@ -174,7 +174,7 @@ func (r *KformWriter) writeSingle(ctx context.Context, w io.Writer, prioritizedK
 		}
 	}
 	for _, key := range keys {
-		bd, err := datastore.Get(ctx, store.ToKey(key.Name))
+		bd, err := datastore.Get(store.ToKey(key.Name))
 		if err != nil {
 			errors.Join(errm, err)
 			continue
@@ -191,7 +191,7 @@ func (r *KformWriter) writeSingle(ctx context.Context, w io.Writer, prioritizedK
 	return errm
 }
 
-func (r *KformWriter) writeRetainFile(ctx context.Context, files map[string][]store.Key, datastore store.Storer[data.BlockData]) error {
+func (r *KformWriter) writeRetainFile(files map[string][]store.Key, datastore store.Storer[data.BlockData]) error {
 	var errm error
 	for fileName, keys := range files {
 		file, err := os.Create(filepath.Join(r.Path, fileName))
@@ -201,7 +201,7 @@ func (r *KformWriter) writeRetainFile(ctx context.Context, files map[string][]st
 		defer file.Close()
 
 		for _, key := range keys {
-			bd, err := datastore.Get(ctx, store.ToKey(key.Name))
+			bd, err := datastore.Get(store.ToKey(key.Name))
 			if err != nil {
 				errors.Join(errm, err)
 				continue

@@ -46,7 +46,7 @@ func (r *KformDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 		ignoreRules, _ = ignore.Parse(f)
 	}
 	dirReader := &DirReader{
-		Path:           r.Path,
+		RelFsysPath:    ".",
 		Fsys:           fsys,
 		MatchFilesGlob: YAMLMatch,
 		IgnoreRules:    ignoreRules,
@@ -56,7 +56,7 @@ func (r *KformDirReader) Read(ctx context.Context) (store.Storer[*yaml.RNode], e
 	if err != nil {
 		return nil, err
 	}
-	datastore := memory.NewStore[*yaml.RNode]()
+	datastore := memory.NewStore[*yaml.RNode](nil)
 	var errm error
 	var wg sync.WaitGroup
 	for _, path := range paths {

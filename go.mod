@@ -6,12 +6,13 @@ replace k8s.io/kubectl => k8s.io/kubectl v0.28.6
 
 require (
 	github.com/apparentlymart/go-versions v1.0.2
+	github.com/go-git/go-git/v5 v5.12.0
 	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe
-	github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42
+	github.com/henderiw/store v0.0.1
 	github.com/kform-dev/kform-plugin v0.0.0-20240512102710-e5ebed866b1d
 	github.com/kform-dev/kform-sdk-go v0.0.0-20240512103435-0eb335662706
 	github.com/kform-dev/plugin v0.0.0-20240512102056-3e4cbfad1f6e
@@ -57,7 +58,6 @@ require (
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
-	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect

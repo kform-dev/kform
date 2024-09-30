@@ -147,13 +147,13 @@ func (r *pkgPushWriter) write(ctx context.Context, data store.Storer[[]byte]) er
 					return fmt.Errorf("cannot read tag imagea, err: %s", err.Error())
 				}
 				// delete the image data
-				data.List(ctx, func(ctx context.Context, k store.Key, b []byte) {
+				data.List(func(k store.Key, b []byte) {
 					path := k.Name
 					if strings.Contains(path, "image") {
-						data.Delete(ctx, k)
+						data.Delete(k)
 					}
 				})
-				data.Create(ctx, store.ToKey(filepath.Join("image", image.Name)), img)
+				data.Create(store.ToKey(filepath.Join("image", image.Name)), img)
 				//log.Info("push package", "ref", pkg.GetRef(), "imageName", image.Name, "img", len(img))
 				if err := r.pushPackage(ctx, r.kind, r.pkg.GetVersionRef(), data); err != nil {
 					return err
@@ -166,7 +166,7 @@ func (r *pkgPushWriter) write(ctx context.Context, data store.Storer[[]byte]) er
 			//var img []byte
 			images := 0
 			var errm error
-			data.List(ctx, func(ctx context.Context, k store.Key, b []byte) {
+			data.List(func(k store.Key, b []byte) {
 				path := k.Name
 				// if the data is an image we delete the current file
 				if strings.HasPrefix(path, "image") {
@@ -181,9 +181,9 @@ func (r *pkgPushWriter) write(ctx context.Context, data store.Storer[[]byte]) er
 							errm = errors.Join(errm, err)
 						}
 						// add the tgz
-						data.Create(ctx, store.ToKey(fmt.Sprintf("%s.tar.gz", path)), tgzb)
+						data.Create(store.ToKey(fmt.Sprintf("%s.tar.gz", path)), tgzb)
 						// delete the non tgz file
-						data.Delete(ctx, store.ToKey(path))
+						data.Delete(store.ToKey(path))
 					}
 					images++
 				}
@@ -207,8 +207,8 @@ func (r *pkgPushWriter) write(ctx context.Context, data store.Storer[[]byte]) er
 func (r *pkgPushWriter) pushPackage(ctx context.Context, kind string, ref string, data store.Storer[[]byte]) error {
 	log := log.FromContext(ctx).With("pkgKind", kind, "pkgName", ref)
 	// build a zipped tar bal from the pkgData in the pkg
-	files := make(map[string]string, data.Len(ctx))
-	data.List(ctx, func(ctx context.Context, k store.Key, b []byte) {
+	files := make(map[string]string, data.Len())
+	data.List(func(k store.Key, b []byte) {
 		files[k.Name] = string(b)
 	})
 	pkgByte, err := oci.BuildTgz(files)

@@ -151,8 +151,8 @@ github.com/henderiw/apiserver-builder v0.0.2-0.20240414132730-35630f41575d h1:ai
 github.com/henderiw/apiserver-builder v0.0.2-0.20240414132730-35630f41575d/go.mod h1:2lcqB0FhlVaEe96mFo+9mBFLc4inya4y03UTGgaYwzE=
 github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe h1:+R53KH7fW+pmqlfSYVTCGPn8pj6gqBGcQ0nq7L1h8+g=
 github.com/henderiw/logger v0.0.0-20230911123436-8655829b1abe/go.mod h1:KNMXpSG8v0BAfIh5rZL4hgow3pBWNbkmmb28x9C5s+Y=
-github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42 h1:uo9dUhlOW/d9zONbqstB5Qllv1N9TBcPg+YXZDktG3U=
-github.com/henderiw/store v0.0.0-20240513051819-0202d08d7b42/go.mod h1:c5bSCdQjql9EgFH643u1LNaUgrh8RD/5FE7yLe73d98=
+github.com/henderiw/store v0.0.1 h1:61z7OYOFtFndUjPWRpTzBLo3Jh9Cs05+itjUIa8RbqU=
+github.com/henderiw/store v0.0.1/go.mod h1:G4Qpc1venTL0CHaSS6lzv5mLHe1MiBEybiJRnwMIjwM=
 github.com/huandu/xstrings v1.4.0 h1:D17IlohoQq4UcpqD7fDk80P7l+lwAmlFaBHgOipl2FU=
 github.com/huandu/xstrings v1.4.0/go.mod h1:y5/lhBue+AyNmUVz9RLU9xbLR0o4KIIExikq4ovT0aE=
 github.com/imdario/mergo v0.3.16 h1:wwQJbIsHYGMUyLSPrEq1CT16AhnhNJQ51+4fdHUnCl4=
