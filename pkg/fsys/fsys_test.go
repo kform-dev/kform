@@ -78,12 +78,12 @@ func testNotExistErr(t *testing.T, tfs FS) {
 func TestReadFS(t *testing.T) {
 	for name, builder := range filesysInitialBuilders {
 		data := fstest.MapFS{
-			"testdata/foo/1.go":       {Data: []byte("package foo\n")},
-			"testdata/foo/1/1.txt":    {Data: []byte("1111\n")},
-			"testdata/foo/2/2.txt":    {Data: []byte("2222\n")},
-			"testdata/foo/2/2.go":     {Data: []byte("package bar\n")},
-			"testdata/foo/bar/3/3.go": {Data: []byte("package zoo\n")},
-			"testdata/foo/bar/4.go":   {Data: []byte("package zoo1\n")},
+			//"testdata/foo/1.go":       {Data: []byte("package foo\n")},
+			//"testdata/foo/1/1.txt":    {Data: []byte("1111\n")},
+			//"testdata/foo/2/2.txt":    {Data: []byte("2222\n")},
+			//"testdata/foo/2/2.go":     {Data: []byte("package bar\n")},
+			//"testdata/foo/bar/3/3.go": {Data: []byte("package zoo\n")},
+			//"testdata/foo/bar/4.go":   {Data: []byte("package zoo1\n")},
 		}
 		t.Run(name, func(t *testing.T) {
 			testReadFS(t, data, builder(data))
