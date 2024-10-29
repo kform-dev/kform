@@ -16,6 +16,8 @@ limitations under the License.
 
 package pkgio
 
+/*
+
 import (
 	"context"
 	"path/filepath"
@@ -99,3 +101,4 @@ func (r *GitWriter) Write(ctx context.Context, datastore store.Storer[[]byte]) e
 
 	return nil
 }
+*/

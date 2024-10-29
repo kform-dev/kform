@@ -42,7 +42,6 @@ type FS interface {
 	// Glob returns the list of matching files,
 	// emulating https://golang.org/pkg/path/filepath/#Glob
 	Glob(pattern string) ([]string, error)
-
 }
 
 func NewMemFS(rootpath string, fs fstest.MapFS) FS {

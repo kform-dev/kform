@@ -16,6 +16,8 @@ limitations under the License.
 
 package pkgio
 
+/*
+
 import (
 	"context"
 	"path/filepath"
@@ -106,3 +108,4 @@ func (r *GitReader) Read(ctx context.Context) (store.Storer[[]byte], error) {
 
 	return datastore, nil
 }
+*/
